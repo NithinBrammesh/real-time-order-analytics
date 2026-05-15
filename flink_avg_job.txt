@@ -1,0 +1,92 @@
+from pyflink.datastream import StreamExecutionEnvironment
+from pyflink.common.serialization import SimpleStringSchema
+from pyflink.datastream.connectors.kafka import (
+    KafkaSource,
+    KafkaSink,
+    KafkaRecordSerializationSchema
+)
+from pyflink.common import Types
+from pyflink.common.watermark_strategy import WatermarkStrategy
+import json
+
+# =========================
+# 🔹 ENVIRONMENT 
+# =========================
+env = StreamExecutionEnvironment.get_execution_environment()
+
+# 🔥 Add Kafka connector JARs
+env.add_jars(
+    "file:///home/nithin/Downloads/kafka-docker/flink-connector-kafka-3.0.2-1.18.jar",
+    "file:///home/nithin/Downloads/kafka-docker/kafka-clients-3.5.1.jar"
+)
+
+# =========================
+# 🔹 KAFKA SOURCE
+# =========================                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         m
+source = KafkaSource.builder() \
+    .set_bootstrap_servers("localhost:9092") \
+    .set_topics("orders_events_v2") \
+    .set_group_id("flink-group") \
+    .set_value_only_deserializer(SimpleStringSchema()) \
+    .build()
+
+stream = env.from_source(
+    source,
+    WatermarkStrategy.no_watermarks(),
+    "Kafka Source"
+)
+
+# =========================
+# 🔹 KAFKA SINK
+# =========================
+sink = KafkaSink.builder() \
+    .set_bootstrap_servers("localhost:9092") \
+    .set_record_serializer(
+        KafkaRecordSerializationSchema.builder()
+        .set_topic("orders0_avg")
+        .set_value_serialization_schema(SimpleStringSchema())
+        .build()    
+    ) \
+    .build()
+
+# =========================
+# 🔹 PROCESS FUNCTION
+# =========================
+values = []
+
+def process(msg):
+    try:
+        data = json.loads(msg)
+
+        if "amount" not in data or data["amount"] is None:
+            print("Skipped invalid data:", data)
+            return None
+
+        amount = float(data["amount"])
+
+        values.append(amount)
+        if len(values) > 5:
+            values.pop(0)
+
+        avg = sum(values) / len(values)
+
+        print(f"Amount: {amount}, Avg: {avg}")
+
+        return json.dumps({"avg": avg})
+
+    except Exception as e:
+        print("Error:", e)
+        return None
+# =========================
+# 🔹 FIXED PIPELINE
+# =========================
+processed_stream = stream \
+    .map(process, output_type=Types.STRING()) \
+    .filter(lambda x: x is not None)
+
+processed_stream.sink_to(sink)
+
+# =========================
+# 🔹 EXECUTE
+# =========================
+env.execute("Kafka Average Job")

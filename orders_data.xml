@@ -1,0 +1,198 @@
+<orders>
+    
+    <order>
+        <order_no>402-9977250-1302757</order_no>
+        <order_date>Tue, 21 Dec, 2021, 4:15 pm IST</order_date>
+        <buyer>Mitra</buyer>
+        <ship_city>CHENNAI</ship_city>
+        <ship_state>TAMIL NADU</ship_state>
+        <sku>SB-WDQN-SDN9</sku>
+        <description>Traditional Block-Printed Women's 100% Pure Leather Shoulder Bag: Double Handle Red Handbag | Multi-pocket Shantiniketan Leather Bag for Women</description>
+        <quantity>3</quantity>
+        <item_total>3897.00</item_total>
+        <shipping_fee>241.90</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>404-7450458-9882702</order_no>
+        <order_date>Mon, 6 Dec, 2021, 11:29 pm IST</order_date>
+        <buyer>Arpita</buyer>
+        <ship_city>Thane District</ship_city>
+        <ship_state>MAHARASHTRA</ship_state>
+        <sku>4V-I7XD-JQVR</sku>
+        <description>Bright and Colorful Shantiniketan Leather Elephant Piggy Coin Bank for Kids/Adults | Light-Weight Handcrafted Elephant Shaped Money Bank (Black, Small)</description>
+        <quantity>1</quantity>
+        <item_total>349.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>402-4007700-9289906</order_no>
+        <order_date>Mon, 13 Dec, 2021, 1:03 pm IST</order_date>
+        <buyer>Valli</buyer>
+        <ship_city>HYDERABAD</ship_city>
+        <ship_state>TELANGANA</ship_state>
+        <sku>8V-OQ14-I63T</sku>
+        <description>Bright and Colorful Shantiniketan Leather Elephant Piggy Coin Bank for Kids/Adults | Light-Weight Handcrafted Elephant Shaped Money Bank (Yellow, Large)</description>
+        <quantity>1</quantity>
+        <item_total>449.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>408-9442756-9477100</order_no>
+        <order_date>Wed, 2 Feb, 2022, 11:58 am IST</order_date>
+        <buyer>amit</buyer>
+        <ship_city>INDORE</ship_city>
+        <ship_state>MADHYA PRADESH</ship_state>
+        <sku>CR-6E69-UXFW</sku>
+        <description>Bright and Colorful Shantiniketan Leather Elephant Piggy Coin Bank for Kids/Adults | Light-Weight Handcrafted Elephant Shaped Money Bank (Black, Large)</description>
+        <quantity>1</quantity>
+        <item_total>449.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>403-7552858-2817166</order_no>
+        <order_date>Sat, 4 Dec, 2021, 2:28 pm IST</order_date>
+        <buyer>Anastasiia</buyer>
+        <ship_city>Visakhapatnam</ship_city>
+        <ship_state>ANDHRA PRADESH</ship_state>
+        <sku>W4-JQ2J-ZUF2</sku>
+        <description>100% Pure Leather Shantiniketan Clutch Purse: Traditional Block Print Bi-color Women's Wallets with Multiple Pockets and Zipper Compartments</description>
+        <quantity>1</quantity>
+        <item_total>399.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>404-9326436-3517161</order_no>
+        <order_date>Wed, 29 Dec, 2021, 1:03 pm IST</order_date>
+        <buyer>Santhosh</buyer>
+        <ship_city>BENGALURU</ship_city>
+        <ship_state>KARNATAKA</ship_state>
+        <sku>4V-I7XD-JQVR</sku>
+        <description>Bright and Colorful Shantiniketan Leather Elephant Piggy Coin Bank for Kids/Adults | Light-Weight Handcrafted Elephant Shaped Money Bank (Black, Small)</description>
+        <quantity>1</quantity>
+        <item_total>349.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>405-8264291-1183552</order_no>
+        <order_date>Tue, 11 Jan, 2022, 1:46 pm IST</order_date>
+        <buyer>Aditi</buyer>
+        <ship_city>NEW DELHI</ship_city>
+        <ship_state>DELHI</ship_state>
+        <sku>94-TSV3-EIW6</sku>
+        <description>Bright and Colorful Shantiniketan Leather Elephant Piggy Coin Bank for Kids/Adults | Light-Weight Handcrafted Elephant Shaped Money Bank (Green, Large)</description>
+        <quantity>1</quantity>
+        <item_total>449.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>403-9089686-7304307</order_no>
+        <order_date>Mon, 6 Dec, 2021, 10:25 pm IST</order_date>
+        <buyer>J</buyer>
+        <ship_city>BENGALURU</ship_city>
+        <ship_state>KARNATAKA</ship_state>
+        <sku>ST-27BR-VEMQ</sku>
+        <description>Stunning Women's Finished Leather Handbag | Sleek and Elegant Party Bag with Glamorous Steel Rings and Multiple Pockets (Pink)</description>
+        <quantity>1</quantity>
+        <item_total>899.00</item_total>
+        <shipping_fee>114.46</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>403-3882329-3552343</order_no>
+        <order_date>Thu, 20 Jan, 2022, 11:49 am IST</order_date>
+        <buyer>maha</buyer>
+        <ship_city>SALEM</ship_city>
+        <ship_state>TAMIL NADU</ship_state>
+        <sku>3F-4R9N-Z8NJ</sku>
+        <description>Set of 3 Pure Leather Block Print Round Jewelry Boxes | Button Closure Multiple Utility Case (Shantiniketan Handicrafts) (Yellow)</description>
+        <quantity>1</quantity>
+        <item_total>475.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>407-4026447-7131527</order_no>
+        <order_date>Sat, 4 Dec, 2021, 10:32 pm IST</order_date>
+        <buyer>chandrima</buyer>
+        <ship_city>BENGALURU</ship_city>
+        <ship_state>KARNATAKA</ship_state>
+        <sku>NV-1DWM-41VX</sku>
+        <description>Bright &amp; Colorful Shantiniketan Leather Piggy Bank for Kids/Adults | Light-Weight Handcrafted Owl Shaped Coin Bank (Red)</description>
+        <quantity>1</quantity>
+        <item_total>549.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>171-5230421-3237921</order_no>
+        <order_date>Wed, 8 Dec, 2021, 12:15 am IST</order_date>
+        <buyer>Geetika</buyer>
+        <ship_city>GURUGRAM</ship_city>
+        <ship_state>HARYANA</ship_state>
+        <sku>DN-0WDX-VYOT</sku>
+        <description>Women's Set of 5 Multicolor Pure Leather Single Lipstick Cases with Mirror, Handy and Compact Handcrafted Shantiniketan Block Printed Jewelry Boxes</description>
+        <quantity>1</quantity>
+        <item_total>449.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>407-8892478-3863557</order_no>
+        <order_date>Mon, 14 Feb, 2022, 7:12 pm IST</order_date>
+        <buyer>Tapan</buyer>
+        <ship_city>GHAZIABAD</ship_city>
+        <ship_state>UTTAR PRADESH</ship_state>
+        <sku>NN-AGEZ-5DUM</sku>
+        <description>Colourful and Bright Peacock Shaped Piggy Coin Bank | Block Printed West Bengal's 100% Leather Handicrafts (Shantiniketan Art)</description>
+        <quantity>1</quantity>
+        <item_total>449.00</item_total>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Delivered to buyer</order_status>
+    </order>
+
+    <order>
+        <order_no>171-3919731-3769907</order_no>
+        <order_date>Tue, 25 Jan, 2022, 11:32 am IST</order_date>
+        <buyer>Deepali</buyer>
+        <ship_city>JODHPUR</ship_city>
+        <ship_state>RAJASTHAN</ship_state>
+        <sku>DN-0WDX-VYOT</sku>
+        <description>Women's Set of 5 Multicolor Pure Leather Single Lipstick Cases with Mirror, Handy and Compact Handcrafted Shantiniketan Block Printed Jewelry Boxes</description>
+        <quantity>1</quantity>
+        <item_total/>
+        <shipping_fee>84.96</shipping_fee>
+        <cod/>
+        <order_status>Returned to seller</order_status>
+    </order>
+
+</orders>

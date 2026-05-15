@@ -1,0 +1,51 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+flink-env/
+bin/
+
+# Kafka / temp files
+*.tmp
+
+# Flink build/cache
+target/
+
+# Node-RED backups (optional)
+*.backup
+
+# Docker
+*.pid
+
+# Redis dump files
+dump.rdb
+
+# Ignore generated cache
+.cache/
+
+# Python virtual env folders
+env/
+ENV/
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# PyCharm
+.idea/
