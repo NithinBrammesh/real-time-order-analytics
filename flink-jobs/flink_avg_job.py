@@ -27,8 +27,8 @@ env.set_restart_strategy(
 )
 
 env.add_jars(
-    "file:///home/nithin/Downloads/kafka-docker/flink-connector-kafka-3.0.2-1.18.jar",
-    "file:///home/nithin/Downloads/kafka-docker/kafka-clients-3.5.1.jar"
+    "file:///home/nithin/Downloads/real-time-order-analytics/flink-connector-kafka-3.0.2-1.18.jar",
+    "file:///home/nithin/Downloads/real-time-order-analytics/kafka-clients-3.5.1.jar"
 )
 
 
