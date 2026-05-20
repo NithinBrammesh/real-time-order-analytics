@@ -1,0 +1,21 @@
+order_id,customer_name,product_name,category,payment_method,city,state,quantity,amount,shipping_fee,order_status,order_source,timestamp
+ORD-1001,Rahul Sharma,Samsung Smart TV,Electronics,UPI,CHENNAI,TAMIL NADU,6,299,680,Delivered,Website,2026-05-20 11:30:00
+ORD-1002,Priya Nair,iPhone 15 Pro Max,Mobiles,EMI,KOLKATA,WEST BENGAL,1,499,579,Delivered,Mobile App,2026-05-20 11:33:00
+ORD-1003,Amit Kumar,Mechanical Keyboard,Accessories,EMI,MUMBAI,MAHARASHTRA,5,899,984,Delivered,Android App,2026-05-20 11:36:00
+ORD-1004,Sneha Kapoor,Samsung Smart TV,Electronics,NET_BANKING,KOLKATA,WEST BENGAL,6,1099,969,Delivered,Mobile App,2026-05-20 11:39:00
+ORD-1005,Anjali Verma,Samsung Smart TV,Electronics,COD,SURAT,GUJARAT,5,2499,374,Delivered,Mobile App,2026-05-20 11:42:00
+ORD-1006,Vikram Joshi,Leather Handbag,Fashion,EMI,KOLKATA,WEST BENGAL,5,4999,921,Delivered,Android App,2026-05-20 11:45:00
+ORD-1007,Pooja Reddy,Bluetooth Speaker,Electronics,COD,JAIPUR,RAJASTHAN,1,8999,571,Delivered,Mobile App,2026-05-20 11:48:00
+ORD-1008,Neha Singh,Gaming Laptop,Laptops,COD,JAIPUR,RAJASTHAN,5,15000,52,Delivered,Android App,2026-05-20 11:51:00
+ORD-1009,Ritika Das,Canon DSLR Camera,Cameras,NET_BANKING,MUMBAI,MAHARASHTRA,5,25000,230,Delivered,Website,2026-05-20 11:54:00
+ORD-1010,Kiran Kumar,Bluetooth Speaker,Electronics,UPI,MUMBAI,MAHARASHTRA,5,45000,100,Delivered,Mobile App,2026-05-20 11:57:00
+ORD-1011,Arjun Mehta,iPhone 15 Pro Max,Mobiles,CREDIT_CARD,MUMBAI,MAHARASHTRA,4,70000,942,Delivered,Website,2026-05-20 12:00:00
+ORD-1012,Akash Roy,Bluetooth Speaker,Electronics,COD,CHENNAI,TAMIL NADU,5,90399,707,Delivered,Android App,2026-05-20 12:03:00
+ORD-1013,Shreya Kulkarni,Gaming Laptop,Laptops,EMI,LUCKNOW,UTTAR PRADESH,1,120000,71,Delivered,Mobile App,2026-05-20 12:06:00
+ORD-1014,Harish Patel,Mechanical Keyboard,Accessories,EMI,SURAT,GUJARAT,4,180000,719,Delivered,iOS App,2026-05-20 12:09:00
+ORD-1015,Divya Menon,Bluetooth Speaker,Electronics,EMI,HYDERABAD,TELANGANA,2,250000,640,Delivered,Mobile App,2026-05-20 12:12:00
+ORD-1016,Sahil Arora,iPhone 15 Pro Max,Mobiles,CREDIT_CARD,PUNE,MAHARASHTRA,4,420000,478,Delivered,iOS App,2026-05-20 12:15:00
+ORD-1017,Nikita Rao,Gaming Laptop,Laptops,CREDIT_CARD,BENGALURU,KARNATAKA,2,600000,565,Delivered,Mobile App,2026-05-20 12:18:00
+ORD-1018,Ramesh Iyer,Samsung Smart TV,Electronics,UPI,LUCKNOW,UTTAR PRADESH,6,800000,396,Delivered,Website,2026-05-20 12:21:00
+ORD-1019,Mohit Jain,Bluetooth Speaker,Electronics,NET_BANKING,BENGALURU,KARNATAKA,6,1200000,522,Delivered,iOS App,2026-05-20 12:24:00
+ORD-1020,David Thomas,Gaming Laptop,Laptops,NET_BANKING,SURAT,GUJARAT,6,1500000,554,Delivered,Website,2026-05-20 12:27:00

@@ -8,6 +8,16 @@
         "env": []
     },
     {
+        "id": "206b5dce737a6ac0",
+        "type": "junction",
+        "z": "e3ca88df1a09ceff",
+        "x": 860,
+        "y": 1240,
+        "wires": [
+            []
+        ]
+    },
+    {
         "id": "9391ef88b1f4d066",
         "type": "kafkajs-client",
         "name": "local-kafka",
@@ -204,6 +214,14 @@
     },
     {
         "id": "c1eb4eb22f91e01c",
+        "type": "redis-config",
+        "name": "Local",
+        "options": "{   \"host\": \"127.0.0.1\",   \"port\": 6379 }",
+        "cluster": false,
+        "optionsType": "json"
+    },
+    {
+        "id": "6fb83bc17420070b",
         "type": "redis-config",
         "name": "Local",
         "options": "{   \"host\": \"127.0.0.1\",   \"port\": 6379 }",
@@ -609,7 +627,7 @@
         "type": "function",
         "z": "e3ca88df1a09ceff",
         "name": "Set CSV File",
-        "func": "msg.filename = \"/home/nithin/Downloads/real-time-order-analytics/data/orders_data_1.csv\";\nreturn msg;",
+        "func": "msg.filename = \"/home/nithin/Downloads/real-time-order-analytics/data/orders_data_4.csv\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -674,19 +692,19 @@
         "type": "function",
         "z": "e3ca88df1a09ceff",
         "name": "CSV Formatter",
-        "func": "// =========================\n// 🔹 FINAL CSV FORMATTER (CLEAN + SAFE)\n// =========================\n\n// Ensure payload is object\nif (typeof msg.payload !== \"object\") {\n  node.warn(\"Invalid payload (not object): \" + msg.payload);\n  return null;\n}\n\nconst row = msg.payload;\n\n// ---- Clean date ----\nconst rawDate = row.order_date || \"\";\n\nconst cleanedDate = rawDate\n  .replace(/^[A-Za-z]+,\\s*/, '')\n  .replace(/\\sIST$/, '');\n\n//timezone\nconst parsedDate = new Date(cleanedDate + ' GMT+0530');\nconst eventTime = isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();\n\n// ---- Clean city ----\nconst cleanCity = row.ship_city\n  ? row.ship_city.replace(/,+$/, '').trim().toUpperCase()\n  : null;\n\n// ---- Clean state ----\nconst cleanState = row.ship_state\n  ? row.ship_state.replace(/,+$/, '').trim().toUpperCase()\n  : null;\n\n// ---- Clean amount ----\nconst cleanAmount = row.item_total\n  ? Number(row.item_total.toString().replace(/[₹,]/g, ''))\n  : null;\n\n// ---- Validate required fields ----\nif (!row.order_no || !cleanCity) {\n  node.warn(\"Skipping invalid row: \" + JSON.stringify(row));\n  return null;\n}\n\n// ---- Build object ----\nconst order = {\n  order_id: row.order_no,\n  order_date: rawDate,\n  buyer_name: row.buyer || null,\n  city: cleanCity,\n  state: cleanState,\n  sku: row.sku || null,\n  description: row.description || null,\n  quantity: row.quantity ? Number(row.quantity) : null,\n  amount: cleanAmount,\n  event_time: eventTime\n};\n\n// =========================\n// 🔹 CSV OUTPUT\n// =========================\n// Format: order_id,amount,city\n\nconst amountFinal = order.amount !== null ? order.amount : 0;\n\nmsg.payload = `${order.order_id},${amountFinal},${order.city}`;\n\n// Debug log\nnode.warn(\"FINAL CSV → \" + msg.payload);\n\nreturn msg;",
+        "func": "// =========================\n// 🔹 CSV FORMATTER (UPDATED FINAL)\n// =========================\n\n// Validate payload\nif (typeof msg.payload !== \"object\") {\n\n  node.warn(\n    \"Invalid payload: \" +\n    msg.payload\n  );\n\n  return null;\n}\n\nconst row = msg.payload;\n\n// =========================\n// 🔹 CLEAN DATE\n// =========================\n\nconst rawDate = row.timestamp || row.order_date || \"\";\n\nlet parsedDate = new Date(rawDate);\n\nif (isNaN(parsedDate.getTime())) {\n\n  parsedDate = new Date();\n}\n\n// =========================\n// 🔹 CLEAN FIELDS\n// =========================\n\n// ORDER ID\nconst orderId =\n  row.order_id ||\n  row.order_no ||\n  null;\n\n// CUSTOMER\nconst customerName =\n  row.customer_name ||\n  row.buyer ||\n  \"UNKNOWN\";\n\n// PRODUCT\nconst productName =\n  row.product_name ||\n  row.description ||\n  \"UNKNOWN PRODUCT\";\n\n// CATEGORY\nconst category =\n  row.category ||\n  \"GENERAL\";\n\n// PAYMENT METHOD\nlet paymentMethod = \"ONLINE\";\n\nif (row.payment_method) {\n\n  paymentMethod = row.payment_method\n    .toString()\n    .trim()\n    .toUpperCase();\n\n}\nelse if (row.cod) {\n\n  paymentMethod = \"COD\";\n}\n\n// CITY\nconst rawCity =\n  row.city ||\n  row.ship_city;\n\nconst city = rawCity\n  ? rawCity.toString()\n    .replace(/,+$/, '')\n    .trim()\n    .toUpperCase()\n  : null;\n\n// STATE\nconst rawState =\n  row.state ||\n  row.ship_state;\n\nconst state = rawState\n  ? rawState.toString()\n    .replace(/,+$/, '')\n    .trim()\n    .toUpperCase()\n  : \"UNKNOWN\";\n\n// QUANTITY\nconst quantity =\n  row.quantity\n    ? Number(row.quantity)\n    : 1;\n\n// AMOUNT\nconst rawAmount =\n  row.amount ||\n  row.item_total ||\n  0;\n\nconst amount = Number(\n  rawAmount.toString()\n    .replace(/[₹,]/g, '')\n    .trim()\n);\n\n// SHIPPING FEE\nconst rawShipping =\n  row.shipping_fee ||\n  0;\n\nconst shippingFee = Number(\n  rawShipping.toString()\n    .replace(/[₹,]/g, '')\n    .trim()\n);\n\n// ORDER STATUS\nconst orderStatus =\n  row.order_status ||\n  \"PENDING\";\n\n// ORDER SOURCE\nconst orderSource =\n  row.order_source ||\n  \"WEBSITE\";\n\n// =========================\n// 🔹 VALIDATION\n// =========================\n\nif (!orderId || !city) {\n\n  node.warn(\n    \"Skipping invalid row: \" +\n    JSON.stringify(row)\n  );\n\n  return null;\n}\n\n// =========================\n// 🔹 FINAL NORMALIZED EVENT\n// =========================\n\nmsg.payload = {\n\n  order_id: orderId\n    .toString()\n    .trim(),\n\n  customer_name: customerName\n    .toString()\n    .trim(),\n\n  product_name: productName\n    .toString()\n    .trim(),\n\n  category: category\n    .toString()\n    .trim(),\n\n  payment_method: paymentMethod,\n\n  city: city,\n\n  state: state,\n\n  quantity: quantity,\n\n  amount: amount,\n\n  shipping_fee: shippingFee,\n\n  order_status: orderStatus,\n\n  order_source: orderSource,\n\n  order_date: parsedDate.toISOString(),\n\n  timestamp: new Date().toISOString()\n\n};\n\n// =========================\n// 🔹 DEBUG\n// =========================\n\nnode.warn(\n  \"FINAL CSV JSON → \" +\n  JSON.stringify(msg.payload)\n);\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 900,
+        "x": 840,
         "y": 100,
         "wires": [
             [
-                "ceed6bea5a426bae",
-                "91cc297cc4ecf301"
+                "91cc297cc4ecf301",
+                "ab8ce08a6c71fcb1"
             ]
         ]
     },
@@ -706,7 +724,7 @@
         "transactiontimeout": 60000,
         "metadatamaxage": 300000,
         "allowautotopiccreation": false,
-        "x": 1140,
+        "x": 1200,
         "y": 100,
         "wires": []
     },
@@ -853,7 +871,7 @@
         "type": "function",
         "z": "e3ca88df1a09ceff",
         "name": "JSON Formatter",
-        "func": "// =========================\n// 🔹 JSON FORMATTER (FINAL)\n// =========================\n\n// Ensure payload is object\nif (typeof msg.payload !== \"object\") {\n    node.warn(\"Invalid payload: \" + msg.payload);\n    return null;\n}\n\nconst row = msg.payload;\n\n// ---- Clean Order ID ----\nconst orderId = row.order_no ? row.order_no.toString().trim() : null;\n\n// ---- Clean City ----\nconst city = row.ship_city\n    ? row.ship_city.replace(/,+$/, '').trim().toUpperCase()\n    : null;\n\n// ---- Clean Amount ----\nlet amount = null;\nif (row.item_total) {\n    amount = Number(\n        row.item_total.toString().replace(/[₹,]/g, '')\n    );\n}\n\n// ---- Validation ----\nif (!orderId || !city) {\n    node.warn(\"Skipping invalid row: \" + JSON.stringify(row));\n    return null;\n}\n\n// =========================\n// 🔹 FINAL JSON OUTPUT\n// =========================\n\nmsg.payload = {\n    order_id: orderId,\n    amount: amount !== null ? amount : 0,\n    city: city\n};\n\n// Debug\nnode.warn(\"FINAL JSON → \" + JSON.stringify(msg.payload));\n\nreturn msg;",
+        "func": "// =========================\n// 🔹 JSON FORMATTER (FINAL)\n// Supports OLD + NEW JSON SCHEMA\n// =========================\n\n// Validate payload\nif (typeof msg.payload !== \"object\") {\n\n    node.warn(\"Invalid payload: \" + msg.payload);\n\n    return null;\n}\n\nconst row = msg.payload;\n\n// =========================\n// 🔹 CLEAN + NORMALIZE FIELDS\n// =========================\n\n// ORDER ID\nconst orderId = row.order_id || row.order_no;\n\n// CUSTOMER NAME\nconst customerName = row.customer_name || row.buyer || \"UNKNOWN\";\n\n// PRODUCT NAME\nconst productName =\n    row.product_name ||\n    row.description ||\n    \"UNKNOWN PRODUCT\";\n\n// PAYMENT METHOD\nlet paymentMethod = \"ONLINE\";\n\nif (row.payment_method) {\n\n    paymentMethod = row.payment_method\n        .toString()\n        .trim()\n        .toUpperCase();\n\n}\nelse if (row.cod) {\n\n    paymentMethod = \"COD\";\n}\n\n// CITY\nconst rawCity = row.city || row.ship_city;\n\nconst city = rawCity\n    ? rawCity.toString()\n        .replace(/,+$/, '')\n        .trim()\n        .toUpperCase()\n    : null;\n\n// STATE\nconst state = (\n    row.state ||\n    row.ship_state ||\n    \"UNKNOWN\"\n)\n    .toString()\n    .trim()\n    .toUpperCase();\n\n// QUANTITY\nconst quantity = row.quantity\n    ? Number(row.quantity)\n    : 1;\n\n// AMOUNT\nconst rawAmount =\n    row.amount ||\n    row.item_total ||\n    0;\n\nconst amount = Number(\n    rawAmount\n        .toString()\n        .replace(/[₹,]/g, '')\n        .trim()\n);\n\n// SHIPPING FEE\nconst rawShipping =\n    row.shipping_fee ||\n    0;\n\nconst shippingFee = Number(\n    rawShipping\n        .toString()\n        .replace(/[₹,]/g, '')\n        .trim()\n);\n\n// ORDER STATUS\nconst orderStatus =\n    row.order_status ||\n    \"PENDING\";\n\n// ORDER DATE\nconst orderDate =\n    row.order_date ||\n    new Date().toISOString();\n\n// =========================\n// 🔹 VALIDATION\n// =========================\n\nif (!orderId || !city) {\n\n    node.warn(\n        \"Skipping invalid row: \" +\n        JSON.stringify(row)\n    );\n\n    return null;\n}\n\n// =========================\n// 🔹 FINAL CLEAN EVENT\n// =========================\n\nmsg.payload = {\n\n    order_id: orderId\n        .toString()\n        .trim(),\n\n    customer_name: customerName\n        .toString()\n        .trim(),\n\n    product_name: productName\n        .toString()\n        .trim(),\n\n    payment_method: paymentMethod,\n\n    city: city,\n\n    state: state,\n\n    quantity: quantity,\n\n    amount: amount,\n\n    shipping_fee: shippingFee,\n\n    order_status: orderStatus,\n\n    order_date: orderDate,\n\n    timestamp: new Date().toISOString()\n\n};\n\n// =========================\n// 🔹 DEBUG\n// =========================\n\nnode.warn(\n    \"FINAL JSON → \" +\n    JSON.stringify(msg.payload)\n);\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -885,8 +903,8 @@
         "transactiontimeout": 60000,
         "metadatamaxage": 300000,
         "allowautotopiccreation": false,
-        "x": 1220,
-        "y": 840,
+        "x": 1240,
+        "y": 760,
         "wires": []
     },
     {
@@ -911,7 +929,7 @@
         "payload": "",
         "payloadType": "date",
         "x": 120,
-        "y": 680,
+        "y": 600,
         "wires": [
             [
                 "223dbdda1cefc704"
@@ -931,7 +949,7 @@
         "finalize": "",
         "libs": [],
         "x": 290,
-        "y": 680,
+        "y": 600,
         "wires": [
             [
                 "b22c18efce52351c",
@@ -952,7 +970,7 @@
         "encoding": "none",
         "allProps": false,
         "x": 460,
-        "y": 680,
+        "y": 600,
         "wires": [
             [
                 "06f059a021dd9748"
@@ -972,7 +990,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 440,
-        "y": 580,
+        "y": 500,
         "wires": []
     },
     {
@@ -1012,15 +1030,15 @@
         "type": "function",
         "z": "e3ca88df1a09ceff",
         "name": "XML Formatter",
-        "func": "// =========================\n// 🔹 XML FORMATTER (FINAL)\n// =========================\n\nif (!msg.payload) {\n    node.warn(\"Empty XML payload\");\n    return null;\n}\n\nlet data = msg.payload;\n\n// ✅ Normalize orders (handles all cases)\n\nlet orders = [];\n\n\nif (data.orders && data.orders.order) {\n    orders = Array.isArray(data.orders.order)\n        ? data.orders.order\n        : [data.orders.order];\n\n}  else {\n    orders = [data];\n}\n\n// ✅ Process all orders\nlet result = [];\n\norders.forEach(row => {\n\n    const orderId = row.order_no\n        ? row.order_no.toString().trim()\n        : null;\n\n    const city = row.ship_city\n        ? row.ship_city.toString().replace(/,+$/, '').trim().toUpperCase()\n        : null;\n\n    let amount = null;\n    if (row.item_total) {\n        amount = Number(\n            row.item_total.toString().replace(/[₹,]/g, '')\n        );\n    }\n\n    // Skip invalid rows\n    if (!orderId || !city) {\n        node.warn(\"Skipping invalid XML row: \" + JSON.stringify(row));\n        return;\n    }\n\n    result.push({\n        order_id: orderId,\n        amount: amount !== null ? amount : 0,\n        city: city\n    });\n\n});\n\n// If no valid data\nif (result.length === 0) {\n    return null;\n}\n\n// ✅ Final payload (multiple orders supported)\nmsg.payload = {\n    orders: result\n};\n\nreturn msg;",
+        "func": "// =========================\n// 🔹 XML FORMATTER (UPDATED FINAL)\n// =========================\n\nif (!msg.payload) {\n\n    node.warn(\"Empty XML payload\");\n    return null;\n\n}\n\nlet data = msg.payload;\n\n// =========================\n// 🔹 NORMALIZE XML STRUCTURE\n// =========================\n\nlet orders = [];\n\nif (data.orders && data.orders.order) {\n\n    orders = Array.isArray(data.orders.order)\n        ? data.orders.order\n        : [data.orders.order];\n\n} else {\n\n    orders = [data];\n\n}\n\n// =========================\n// 🔹 CLEAN + FORMAT DATA\n// =========================\n\nlet result = [];\n\norders.forEach(row => {\n\n    // ORDER ID\n    const orderId = row.order_id\n        ? row.order_id.toString().trim()\n        : null;\n\n    // CUSTOMER\n    const customerName = row.customer_name\n        ? row.customer_name.toString().trim()\n        : \"UNKNOWN\";\n\n    // PRODUCT\n    const productName = row.product_name\n        ? row.product_name.toString().trim()\n        : \"UNKNOWN\";\n\n    // PAYMENT\n    const paymentMethod = row.payment_method\n        ? row.payment_method.toString().trim().toUpperCase()\n        : \"UNKNOWN\";\n\n    // CITY\n    const city = row.city\n        ? row.city.toString().trim().toUpperCase()\n        : null;\n\n    // STATE\n    const state = row.state\n        ? row.state.toString().trim().toUpperCase()\n        : \"UNKNOWN\";\n\n    // QUANTITY\n    const quantity = row.quantity\n        ? Number(row.quantity)\n        : 1;\n\n    // AMOUNT\n    let amount = 0;\n\n    if (row.amount) {\n\n        amount = Number(\n            row.amount.toString()\n                .replace(/[₹,]/g, \"\")\n                .trim()\n        );\n\n    }\n\n    // SHIPPING FEE\n    let shippingFee = 0;\n\n    if (row.shipping_fee) {\n\n        shippingFee = Number(\n            row.shipping_fee.toString()\n                .replace(/[₹,]/g, \"\")\n                .trim()\n        );\n\n    }\n\n    // ORDER STATUS\n    const orderStatus = row.order_status\n        ? row.order_status.toString().trim()\n        : \"PENDING\";\n\n    // =========================\n    // 🔹 SKIP INVALID DATA\n    // =========================\n\n    if (!orderId || !city) {\n\n        node.warn(\n            \"Skipping invalid XML row: \" +\n            JSON.stringify(row)\n        );\n\n        return;\n\n    }\n\n    // =========================\n    // 🔹 FINAL CLEAN OBJECT\n    // =========================\n\n    result.push({\n\n        order_id: orderId,\n\n        customer_name: customerName,\n\n        product_name: productName,\n\n        payment_method: paymentMethod,\n\n        city: city,\n\n        state: state,\n\n        quantity: quantity,\n\n        amount: amount,\n\n        shipping_fee: shippingFee,\n\n        order_status: orderStatus\n\n    });\n\n});\n\n// =========================\n// 🔹 NO VALID DATA\n// =========================\n\nif (result.length === 0) {\n\n    node.warn(\"No valid XML orders found\");\n    return null;\n\n}\n\n// =========================\n// 🔹 FINAL PAYLOAD\n// =========================\n\nmsg.payload = {\n\n    orders: result\n\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 980,
-        "y": 680,
+        "x": 1000,
+        "y": 620,
         "wires": [
             [
                 "c3169a25326b6401",
@@ -1040,8 +1058,8 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 1160,
-        "y": 580,
+        "x": 1180,
+        "y": 520,
         "wires": []
     },
     {
@@ -1077,7 +1095,7 @@
         "addname": "",
         "property": "payload",
         "x": 790,
-        "y": 680,
+        "y": 600,
         "wires": [
             [
                 "27c7e7b5563865da"
@@ -1097,7 +1115,7 @@
         "finalize": "",
         "libs": [],
         "x": 720,
-        "y": 640,
+        "y": 560,
         "wires": [
             [
                 "3554c288d3650938"
@@ -1132,8 +1150,8 @@
         "property": "payload",
         "attr": "",
         "chr": "",
-        "x": 1150,
-        "y": 740,
+        "x": 1170,
+        "y": 680,
         "wires": [
             [
                 "4d3d01f1d2b0a0a2"
@@ -1149,7 +1167,7 @@
         "attr": "",
         "chr": "",
         "x": 610,
-        "y": 700,
+        "y": 620,
         "wires": [
             [
                 "c05d05210d24cb05"
@@ -1160,6 +1178,7 @@
         "id": "6f8d4d3afa655410",
         "type": "Kafka Consumer",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "Order Kafka Consumer",
         "broker": "1e3981c8552e0d34",
         "regex": false,
@@ -1181,19 +1200,21 @@
         "keyEncoding": "utf8",
         "connectionType": "Consumer",
         "convertToJson": false,
-        "x": 280,
-        "y": 960,
+        "x": 95,
+        "y": 1560,
         "wires": [
             [
-                "8c941676ccb64104",
-                "1b53916f08c8d292"
+                "1b53916f08c8d292",
+                "8c941676ccb64104"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "8c941676ccb64104",
         "type": "function",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "function websocket format",
         "func": "// 1. Ensure payload exists\nif (!msg.payload) {\n    return null;\n}\n\nlet data;\n\n// 2. Safely parse JSON\ntry {\n    data = (typeof msg.payload === \"string\")\n        ? JSON.parse(msg.payload)\n        : msg.payload;\n} catch (err) {\n    node.warn(\"❌ Invalid JSON received from Kafka\");\n    return null;\n}\n\n// 3. Validate required fields\nif (\n    !data.city ||\n    typeof data.total_amount !== \"number\" ||\n    typeof data.count !== \"number\" ||\n    typeof data.avg !== \"number\"\n) {\n    node.warn(\"⚠️ Invalid data format received\");\n    return null;\n}\n\n// 4. Normalize\ndata.city = String(data.city).toUpperCase();\n\nconst cleanData = {\n    city: data.city,\n    total_amount: data.total_amount,\n    count: data.count,\n    avg: data.avg\n};\n\n\n// 🔥 5. STORE DATA (THIS IS THE IMPORTANT PART)\nlet current = global.get(\"orders\") || [];\n\n// remove old entry for same city\ncurrent = current.filter(o => o.city !== cleanData.city);\n\n// add updated one\ncurrent.push(cleanData);\n\n// save back\nglobal.set(\"orders\", current);\n\n\n// 🔥 6. Send to WebSocket\nmsg.payload = cleanData;\n\nreturn msg;",
         "outputs": 1,
@@ -1202,30 +1223,34 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 530,
-        "y": 1000,
+        "x": 335,
+        "y": 1600,
         "wires": [
             [
                 "694d3d8511b8d148",
                 "e54be09090430ce6"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "694d3d8511b8d148",
         "type": "websocket out",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "Orders Live WebSocket",
         "server": "35de16ef9ee1aa1b",
         "client": "",
-        "x": 810,
-        "y": 1080,
-        "wires": []
+        "x": 615,
+        "y": 1680,
+        "wires": [],
+        "l": false
     },
     {
         "id": "1b53916f08c8d292",
         "type": "debug",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "debug 13",
         "active": true,
         "tosidebar": true,
@@ -1234,14 +1259,16 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 540,
-        "y": 920,
-        "wires": []
+        "x": 395,
+        "y": 1520,
+        "wires": [],
+        "l": false
     },
     {
         "id": "e54be09090430ce6",
         "type": "debug",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "debug 14",
         "active": true,
         "tosidebar": true,
@@ -1250,9 +1277,10 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 770,
-        "y": 940,
-        "wires": []
+        "x": 625,
+        "y": 1540,
+        "wires": [],
+        "l": false
     },
     {
         "id": "93b496b269ac7690",
@@ -1263,8 +1291,8 @@
         "property": "payload",
         "action": "",
         "pretty": false,
-        "x": 135,
-        "y": 1480,
+        "x": 855,
+        "y": 1580,
         "wires": [
             [
                 "104b2a684f0d6adf"
@@ -1298,8 +1326,8 @@
         "keyEncoding": "utf8",
         "connectionType": "Consumer",
         "convertToJson": false,
-        "x": 65,
-        "y": 1480,
+        "x": 785,
+        "y": 1580,
         "wires": [
             [
                 "93b496b269ac7690"
@@ -1320,8 +1348,8 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 195,
-        "y": 1480,
+        "x": 915,
+        "y": 1580,
         "wires": [
             [
                 "c06aa52b39f839a0"
@@ -1368,8 +1396,8 @@
         "outputs": 1,
         "useDifferentColor": false,
         "className": "",
-        "x": 275,
-        "y": 1480,
+        "x": 995,
+        "y": 1580,
         "wires": [
             []
         ],
@@ -1379,35 +1407,40 @@
         "id": "4c8997fbc87ceeb4",
         "type": "http in",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "",
         "url": "/orders",
         "method": "get",
         "upload": false,
         "skipBodyParsing": false,
         "swaggerDoc": "",
-        "x": 90,
-        "y": 1140,
+        "x": 55,
+        "y": 1340,
         "wires": [
             [
                 "ad20cd67884b6ff3"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "c85346cdde0cabb1",
         "type": "http response",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "",
         "statusCode": "",
         "headers": {},
-        "x": 1250,
-        "y": 1460,
-        "wires": []
+        "x": 1335,
+        "y": 1520,
+        "wires": [],
+        "l": false
     },
     {
         "id": "ad20cd67884b6ff3",
         "type": "function",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "function redis",
         "func": "msg.payload = \"city_avg:*\";\nreturn msg;",
         "outputs": 1,
@@ -1416,18 +1449,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 250,
-        "y": 1180,
+        "x": 215,
+        "y": 1380,
         "wires": [
             [
                 "409993fb25c6e0d1"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "409993fb25c6e0d1",
         "type": "redis-command",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "server": "c1eb4eb22f91e01c",
         "command": "KEYS",
         "name": "Get Redis Keys",
@@ -1436,18 +1471,20 @@
         "paramsType": "json",
         "payloadType": "json",
         "block": false,
-        "x": 440,
-        "y": 1220,
+        "x": 395,
+        "y": 1420,
         "wires": [
             [
                 "9149069558f45e75"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "a63b2187b0eebd61",
         "type": "function",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "function convert redis",
         "func": "let arr = msg.payload;\n\nlet obj = {};\n\nfor (let i = 0; i < arr.length; i += 2) {\n\n    let key = arr[i];\n    let value = arr[i + 1];\n\n    if (key === \"count\") {\n        value = parseInt(value);\n    }\n\n    if (key === \"total_amount\" || key === \"avg\") {\n        value = parseFloat(value);\n    }\n\n    obj[key] = value;\n}\n\nmsg.payload = obj;\n\nreturn msg;",
         "outputs": 1,
@@ -1456,18 +1493,20 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 980,
-        "y": 1380,
+        "x": 975,
+        "y": 1460,
         "wires": [
             [
                 "eb469a9dd429bf52"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "9149069558f45e75",
         "type": "split",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "",
         "splt": "\\n",
         "spltType": "str",
@@ -1476,18 +1515,20 @@
         "stream": false,
         "addname": "",
         "property": "payload",
-        "x": 590,
-        "y": 1260,
+        "x": 595,
+        "y": 1420,
         "wires": [
             [
                 "15e04a0a9ab2bb48"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "15e04a0a9ab2bb48",
         "type": "redis-command",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "server": "c1eb4eb22f91e01c",
         "command": "HGETALL",
         "name": "Get Redis HGETALL",
@@ -1496,18 +1537,20 @@
         "paramsType": "json",
         "payloadType": "json",
         "block": false,
-        "x": 760,
-        "y": 1320,
+        "x": 735,
+        "y": 1420,
         "wires": [
             [
                 "a63b2187b0eebd61"
             ]
-        ]
+        ],
+        "l": false
     },
     {
         "id": "eb469a9dd429bf52",
         "type": "join",
         "z": "e3ca88df1a09ceff",
+        "d": true,
         "name": "",
         "mode": "auto",
         "build": "object",
@@ -1521,11 +1564,233 @@
         "timeout": "",
         "count": "",
         "reduceRight": false,
-        "x": 1170,
-        "y": 1380,
+        "x": 1215,
+        "y": 1480,
         "wires": [
             [
                 "c85346cdde0cabb1"
+            ]
+        ],
+        "l": false
+    },
+    {
+        "id": "b097206ce0f71949",
+        "type": "http in",
+        "z": "e3ca88df1a09ceff",
+        "name": "",
+        "url": "/alerts",
+        "method": "get",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 1140,
+        "wires": [
+            [
+                "6f9ab165d2f8ec26"
+            ]
+        ]
+    },
+    {
+        "id": "123c1239dc269ef9",
+        "type": "function",
+        "z": "e3ca88df1a09ceff",
+        "name": "function redis alert",
+        "func": "msg.headers = {\n    \"Content-Type\": \"application/json\"\n};\n\nmsg.payload = {\n    success: true,\n    data: msg.payload || msg.stdout || \"No Redis data\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 1140,
+        "wires": [
+            [
+                "02136e078988122f",
+                "274c21519f13d234"
+            ]
+        ]
+    },
+    {
+        "id": "887f971cda205de0",
+        "type": "http response",
+        "z": "e3ca88df1a09ceff",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 1610,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "02136e078988122f",
+        "type": "http response",
+        "z": "e3ca88df1a09ceff",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 780,
+        "y": 1140,
+        "wires": []
+    },
+    {
+        "id": "274c21519f13d234",
+        "type": "debug",
+        "z": "e3ca88df1a09ceff",
+        "name": "debug 5",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 780,
+        "y": 1040,
+        "wires": []
+    },
+    {
+        "id": "2665f15612b2b7e9",
+        "type": "debug",
+        "z": "e3ca88df1a09ceff",
+        "name": "debug 4",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 510,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "6f9ab165d2f8ec26",
+        "type": "exec",
+        "z": "e3ca88df1a09ceff",
+        "command": "redis-cli",
+        "addpay": "",
+        "append": "XREVRANGE orders_stream + - COUNT 5",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Redis Stream Alerts",
+        "x": 320,
+        "y": 1140,
+        "wires": [
+            [],
+            [
+                "123c1239dc269ef9",
+                "2665f15612b2b7e9"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "1a44804c5b280b17",
+        "type": "http in",
+        "z": "e3ca88df1a09ceff",
+        "name": "",
+        "url": "/test",
+        "method": "get",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 200,
+        "y": 820,
+        "wires": [
+            [
+                "b1b55c01c7f78f09"
+            ]
+        ]
+    },
+    {
+        "id": "b1b55c01c7f78f09",
+        "type": "function",
+        "z": "e3ca88df1a09ceff",
+        "name": "function 8",
+        "func": "msg.payload = {\n    success: true,\n    message: \"Node-RED working\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 820,
+        "wires": [
+            [
+                "b4483fc2a29aa2e0"
+            ]
+        ]
+    },
+    {
+        "id": "b4483fc2a29aa2e0",
+        "type": "http response",
+        "z": "e3ca88df1a09ceff",
+        "name": "",
+        "statusCode": "",
+        "headers": {},
+        "x": 590,
+        "y": 820,
+        "wires": []
+    },
+    {
+        "id": "bd2dd7bcbfa4424b",
+        "type": "redis-command",
+        "z": "e3ca88df1a09ceff",
+        "server": "6fb83bc17420070b",
+        "command": "XREVRANGE",
+        "name": "Redis Alert",
+        "topic": "orders_stream",
+        "params": "[\"+\", \"-\", \"COUNT\", \"20\"]",
+        "paramsType": "json",
+        "payloadType": "json",
+        "block": false,
+        "x": 1130,
+        "y": 1060,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "81e500547b9c7f20",
+        "type": "function",
+        "z": "e3ca88df1a09ceff",
+        "name": "XML Formatter",
+        "func": "// =========================\n// 🔹 XML FORMATTER (FINAL)\n// =========================\n\nif (!msg.payload) {\n    node.warn(\"Empty XML payload\");\n    return null;\n}\n\nlet data = msg.payload;\n\n// ✅ Normalize orders (handles all cases)\n\nlet orders = [];\n\n\nif (data.orders && data.orders.order) {\n    orders = Array.isArray(data.orders.order)\n        ? data.orders.order\n        : [data.orders.order];\n\n}  else {\n    orders = [data];\n}\n\n// ✅ Process all orders\nlet result = [];\n\norders.forEach(row => {\n\n    const orderId = row.order_no\n        ? row.order_no.toString().trim()\n        : null;\n\n    const city = row.ship_city\n        ? row.ship_city.toString().replace(/,+$/, '').trim().toUpperCase()\n        : null;\n\n    let amount = null;\n    if (row.item_total) {\n        amount = Number(\n            row.item_total.toString().replace(/[₹,]/g, '')\n        );\n    }\n\n    // Skip invalid rows\n    if (!orderId || !city) {\n        node.warn(\"Skipping invalid XML row: \" + JSON.stringify(row));\n        return;\n    }\n\n    result.push({\n        order_id: orderId,\n        amount: amount !== null ? amount : 0,\n        city: city\n    });\n\n});\n\n// If no valid data\nif (result.length === 0) {\n    return null;\n}\n\n// ✅ Final payload (multiple orders supported)\nmsg.payload = {\n    orders: result\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 894.4443969726562,
+        "y": 746.6666259765625,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ab8ce08a6c71fcb1",
+        "type": "function",
+        "z": "e3ca88df1a09ceff",
+        "name": "Kafka CSV Stringifier",
+        "func": "msg.payload = JSON.stringify(msg.payload);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1060,
+        "y": 160,
+        "wires": [
+            [
+                "ceed6bea5a426bae"
             ]
         ]
     }

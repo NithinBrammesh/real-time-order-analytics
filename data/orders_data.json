@@ -63,8 +63,8 @@
     "ship_state": "GUJARAT",
     "sku": "SB-WDQN-SDN9",
     "description": "Traditional Block-Printed Women's 100% Pure Leather Shoulder Bag: Double Handle Red Handbag | Multi-pocket Shantiniketan Leather Bag for Women",
-    "quantity": 1,
-    "item_total": 1299.00,
+    "quantity": 1,	
+    "item_total": 70000.00,
     "shipping_fee": 178.18,
     "cod": "Cash On Delivery",
     "order_status": "Delivered to buyer"
@@ -92,7 +92,7 @@
     "sku": "XY-7890-ZXC",
     "description": "Handcrafted Coin Bank",
     "quantity": 1,
-    "item_total": 449.00,
+    "item_total": 65449.00,
     "shipping_fee": 60.00,
     "cod": null,
     "order_status": "Delivered to buyer"
