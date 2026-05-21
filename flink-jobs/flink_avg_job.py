@@ -326,55 +326,79 @@ class AvgPerCity(KeyedProcessFunction):
             # =========================
             alert_data = {
 
-                "order_id": value.get("order_id"),
+            "order_id": value.get("order_id"),
 
-                "customer_name": value.get(
-                    "customer_name"
-                ),
+            "customer_name": value.get(
+                "customer_name",
+                "UNKNOWN"
+            ),
 
-                "product_name": value.get(
-                    "product_name"
-                ),
+            "product_name": value.get(
+                "product_name",
+                "UNKNOWN"
+            ),
 
-                "category": value.get(
-                    "category"
-                ),
+            "category": value.get(
+                "category",
+                "UNKNOWN"
+            ),
 
-                "payment_method": payment_method,
+            "payment_method": payment_method,
 
-                "city": city,
+            "city": city,
 
-                "state": value.get("state"),
+            "state": value.get(
+                "state",
+                "UNKNOWN"
+            ),
 
-                "quantity": quantity,
+            "quantity": quantity,
 
-                "amount": amount,
+            "amount": amount,
 
-                "shipping_fee": value.get(
-                    "shipping_fee"
-                ),
+            "shipping_fee": value.get(
+                "shipping_fee",
+                0
+            ),
 
-                "order_status": value.get(
-                    "order_status"
-                ),
+            "order_status": value.get(
+                "order_status",
+                "UNKNOWN"
+            ),
 
-                "order_source": value.get(
-                    "order_source"
-                ),
+            "order_source": value.get(
+                "order_source",
+                "UNKNOWN"
+            ),
 
-                "avg": round(avg, 2),
+            "avg": round(avg, 2),
 
-                "total_orders": current_count,
+            "total_orders": current_count,
 
-                "severity": severity,
+            "severity": severity,
 
-                "is_high_value": is_high_value,
+            "is_high_value": str(is_high_value),
 
-                "bulk_order": bulk_order,
+            "bulk_order": str(bulk_order),
 
-                "suspicious_payment": suspicious_payment
+            "suspicious_payment": str(
+                suspicious_payment
+            )
+        }
+
+            # =========================
+            # 🔹 REDIS SAFE DATA
+            # =========================
+            alert_data = {
+
+                k: (
+                    "UNKNOWN"
+                    if v is None
+                    else v
+                )
+
+                for k, v in alert_data.items()
             }
-
 
             # =========================
             # 🔹 DEBUG LOG
@@ -409,7 +433,15 @@ class AvgPerCity(KeyedProcessFunction):
 
 
             # =========================
-            # 🔹 STORE ALERTS
+            # 🔹 STORE ALL EVENTS IN STREAM
+            # =========================
+            self.redis_client.xadd(
+                "orders_stream",
+                alert_data
+            )
+
+            # =========================
+            # 🔹 ONLY HIGH ALERTS
             # =========================
             if severity != "NORMAL":
 
@@ -423,12 +455,6 @@ class AvgPerCity(KeyedProcessFunction):
                 self.redis_client.publish(
                     "live_alerts",
                     json.dumps(alert_data)
-                )
-
-                # STREAMS
-                self.redis_client.xadd(
-                    "orders_stream",
-                    alert_data
                 )
 
                 print(

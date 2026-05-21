@@ -257,7 +257,7 @@ def metrics():
             if severity == "CRITICAL":
                 critical_orders += 1
 
-            if severity == "HIGH":
+            if severity in ["HIGH", "MEDIUM"]:
                 high_orders += 1
 
         avg_order = (
