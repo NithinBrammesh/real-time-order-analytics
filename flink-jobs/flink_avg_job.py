@@ -1,7 +1,6 @@
 from pyflink.datastream import StreamExecutionEnvironment
 from pyflink.common.serialization import SimpleStringSchema
-from pyflink.datastream.connectors.kafka import KafkaSource
-
+from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitializer  
 from pyflink.common import Types
 from pyflink.common.watermark_strategy import WatermarkStrategy
 
@@ -20,8 +19,8 @@ import re
 env = StreamExecutionEnvironment.get_execution_environment()
 
 env.add_jars(
-    "file:///home/nithin/Downloads/real-time-order-analytics/lib/flink-connector-kafka-3.0.2-1.18.jar",
-    "file:///home/nithin/Downloads/real-time-order-analytics/lib/kafka-clients-3.5.1.jar"
+    "file:///app/lib/flink-connector-kafka-3.0.2-1.18.jar",
+    "file:///app/lib/kafka-clients-3.5.1.jar"
 )
 
 
@@ -31,10 +30,13 @@ env.add_jars(
 try:
 
     source = KafkaSource.builder() \
-        .set_bootstrap_servers("localhost:9092") \
+        .set_bootstrap_servers("kafka:9092") \
         .set_topics("orders_events_v2") \
         .set_group_id("flink-group") \
         .set_value_only_deserializer(SimpleStringSchema()) \
+        .set_starting_offsets(
+            KafkaOffsetsInitializer.earliest()   # ← ADD THIS LINE
+        ) \
         .build()
 
     print("✅ Kafka Source Connected")
@@ -227,7 +229,7 @@ class AvgPerCity(KeyedProcessFunction):
         # 🔹 REDIS CONNECTION
         # =========================
         self.redis_client = redis.Redis(
-            host="localhost",
+            host="redis",
             port=6379,
             decode_responses=True
         )
@@ -384,7 +386,7 @@ class AvgPerCity(KeyedProcessFunction):
             "suspicious_payment": str(
                 suspicious_payment
             )
-        }
+            }
 
             # =========================
             # 🔹 REDIS SAFE DATA

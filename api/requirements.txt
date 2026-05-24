@@ -1,0 +1,8 @@
+flask
+flask-cors
+flask-socketio
+eventlet
+redis
+python-dotenv
+kafka-python
+apache-flink==1.18.0

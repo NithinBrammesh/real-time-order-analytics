@@ -1,15 +1,50 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 
+from flask_socketio import SocketIO
+import threading
 import redis
 import json
+import os
+from dotenv import load_dotenv
 
 # =========================
 # 🔹 FLASK APP
 # =========================
 app = Flask(__name__)
 
+socketio = SocketIO(
+    app,
+    cors_allowed_origins="*"
+)
+
 CORS(app)
+
+
+# =========================
+# 🔹 LOAD ENV VARIABLES
+# =========================
+load_dotenv()
+
+REDIS_HOST = os.getenv(
+    "REDIS_HOST",
+    "redis"
+)
+
+REDIS_PORT = os.getenv(
+    "REDIS_PORT",
+    6379
+)
+
+FLASK_HOST = os.getenv(
+    "FLASK_HOST",
+    "0.0.0.0"
+)
+
+FLASK_PORT = os.getenv(
+    "FLASK_PORT",
+    5000
+)
 
 # =========================
 # 🔹 REDIS CONNECTION
@@ -17,8 +52,8 @@ CORS(app)
 try:
 
     r = redis.Redis(
-        host="localhost",
-        port=6379,
+        host=REDIS_HOST,
+        port=int(REDIS_PORT),
         decode_responses=True
     )
 
@@ -30,6 +65,44 @@ except Exception as e:
 
     print(f"❌ Redis Connection Failed: {e}")
 
+
+# =========================
+# 🔹 REDIS PUBSUB LISTENER
+# =========================
+def redis_listener():
+
+    pubsub = r.pubsub()
+
+    pubsub.subscribe("live_alerts")
+
+    print("🚀 WebSocket Listener Started")
+
+    for message in pubsub.listen():
+
+        try:
+
+            if message["type"] != "message":
+                continue
+
+            data = json.loads(
+                message["data"]
+            )
+
+            print(
+                f"📡 Sending Live Alert: {data}"
+            )
+
+            # EMIT TO FRONTEND
+            socketio.emit(
+                "new_alert",
+                data
+            )
+
+        except Exception as e:
+
+            print(
+                f"❌ WebSocket Error: {e}"
+            )
 
 # =========================
 # 🔹 HEALTH CHECK
@@ -357,11 +430,20 @@ def high_severity():
 # 🔹 START SERVER
 # =========================
 if __name__ == "__main__":
+    
+    listener_thread = threading.Thread(
+    target=redis_listener
+    )
+
+    listener_thread.daemon = True
+
+    listener_thread.start()
 
     print("🚀 Flask API Started")
 
-    app.run(
-        host="0.0.0.0",
-        port=5000,
+    socketio.run(
+        app,
+        host=FLASK_HOST,
+        port=int(FLASK_PORT),
         debug=True
     )

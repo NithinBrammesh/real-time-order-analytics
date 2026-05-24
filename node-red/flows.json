@@ -3,14 +3,23 @@
         "id": "e3ca88df1a09ceff",
         "type": "tab",
         "label": "Flow 1",
+        "disabled": true,
+        "locked": true,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "4ab152296acb7a71",
+        "type": "tab",
+        "label": "Flow 1",
         "disabled": false,
         "info": "",
         "env": []
     },
     {
-        "id": "206b5dce737a6ac0",
+        "id": "9fa69d3eb1fc587b",
         "type": "junction",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "x": 860,
         "y": 1240,
         "wires": [
@@ -21,7 +30,7 @@
         "id": "9391ef88b1f4d066",
         "type": "kafkajs-client",
         "name": "local-kafka",
-        "brokers": "localhost:9092",
+        "brokers": "kafka:9092",
         "clientid": "node-red-producer",
         "connectiontimeout": 3000,
         "requesttimeout": 25000,
@@ -40,28 +49,6 @@
         "saslssl": true,
         "saslmechanism": "plain",
         "loglevel": "debug"
-    },
-    {
-        "id": "1e3981c8552e0d34",
-        "type": "Kafka Broker",
-        "name": "local-kafka",
-        "hosts": [
-            {
-                "host": "localhost",
-                "port": 9092
-            }
-        ],
-        "hostsEnvVar": "",
-        "connectTimeout": 10000,
-        "requestTimeout": 30000,
-        "autoConnect": "true",
-        "idleConnection": 5,
-        "reconnectOnIdle": "true",
-        "maxAsyncRequests": 10,
-        "checkInterval": 10,
-        "selfSign": true,
-        "usetls": false,
-        "useCredentials": false
     },
     {
         "id": "35de16ef9ee1aa1b",
@@ -216,7 +203,7 @@
         "id": "c1eb4eb22f91e01c",
         "type": "redis-config",
         "name": "Local",
-        "options": "{   \"host\": \"127.0.0.1\",   \"port\": 6379 }",
+        "options": "{   \"host\": \"redis\",   \"port\": 6379 }",
         "cluster": false,
         "optionsType": "json"
     },
@@ -224,14 +211,14 @@
         "id": "6fb83bc17420070b",
         "type": "redis-config",
         "name": "Local",
-        "options": "{   \"host\": \"127.0.0.1\",   \"port\": 6379 }",
+        "options": "{   \"host\": \"redis\",   \"port\": 6379 }",
         "cluster": false,
         "optionsType": "json"
     },
     {
-        "id": "93c8696d9c627188",
+        "id": "2fab74ae80d1db04",
         "type": "csv",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "Parse Orders CSV",
         "spec": "rfc",
@@ -249,14 +236,14 @@
         "y": 2340,
         "wires": [
             [
-                "6a6f91448b54e69c"
+                "3c53b36ff9fef0c7"
             ]
         ]
     },
     {
-        "id": "0bbd138f425166cd",
+        "id": "c1f6fc02fd9edba4",
         "type": "file in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "Read File",
         "filename": "/home/nithin/Downloads/real-time-order-analytics/node-red/orders_data.csv",
@@ -270,14 +257,14 @@
         "y": 2340,
         "wires": [
             [
-                "93c8696d9c627188"
+                "2fab74ae80d1db04"
             ]
         ]
     },
     {
-        "id": "51d2c0d01d3b4082",
+        "id": "11ce062849e97a8b",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "function 1",
         "func": "// =========================\n// 🔹 CLEAN & PREPARE DATA\n// =========================\n\n// ---- Clean date ----\nconst rawDate = msg.payload.order_date || \"\";\n\nconst cleanedDate = rawDate\n  .replace(/^[A-Za-z]+,\\s*/, '')\n  .replace(/\\sIST$/, '');\n\nconst parsedDate = new Date(cleanedDate + ' GMT+0530');\nconst eventTime = isNaN(parsedDate.getTime()) ? null : parsedDate.getTime();\n\n// ---- Clean city & state ----\nconst cleanCity = msg.payload.ship_city\n  ? msg.payload.ship_city.replace(/,+$/, '').trim().toUpperCase()\n  : null;\n\nconst cleanState = msg.payload.ship_state\n  ? msg.payload.ship_state.replace(/,+$/, '').trim().toUpperCase()\n  : null;\n\n// ---- Clean amount (₹, commas) ----\nconst cleanAmount = msg.payload.item_total\n  ? Number(msg.payload.item_total.toString().replace(/[₹,]/g, ''))\n  : null;\n\n// ---- Build normalized object ----\nconst order = {\n  order_id: msg.payload.order_no || null,\n  order_date: rawDate,\n  buyer_name: msg.payload.buyer || null,\n  city: cleanCity,\n  state: cleanState,\n  sku: msg.payload.sku || null,\n  description: msg.payload.description || null,\n  quantity: msg.payload.quantity ? Number(msg.payload.quantity) : null,\n  amount: cleanAmount,\n  event_time: eventTime\n};\n\n\n// =========================\n// 🔹 FORMAT SWITCH (IMPORTANT)\n// =========================\n\nlet format = msg.format || \"json\";  // default json\n\ntry {\n\n  if (format === \"csv\") {\n    // CSV format: order_id,amount,city\n    msg.payload = `${order.order_id},${order.amount},${order.city}`;\n  }\n\n  else if (format === \"xml\") {\n    // XML format\n    msg.payload = `<order>\n  <order_id>${order.order_id}</order_id>\n  <amount>${order.amount}</amount>\n  <city>${order.city}</city>\n</order>`;\n  }\n\n  else {\n    // JSON format (default)\n    msg.payload = JSON.stringify({\n      order_id: order.order_id,\n      amount: order.amount,\n      city: order.city\n    });\n  }\n\n} catch (err) {\n  node.error(\"Format conversion error: \" + err);\n  return null;\n}\n\nreturn msg;",
@@ -291,15 +278,15 @@
         "y": 2460,
         "wires": [
             [
-                "eff03c684ad60919",
-                "ccbc180a9540bc40"
+                "b35001ead33161e5",
+                "ca3f3cfc4a8b049d"
             ]
         ]
     },
     {
-        "id": "0f35b6fda90245d5",
+        "id": "d880e13d798cdbf2",
         "type": "kafkajs-producer",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "Order Kafka Producer",
         "client": "9391ef88b1f4d066",
@@ -318,9 +305,9 @@
         "wires": []
     },
     {
-        "id": "6a6f91448b54e69c",
+        "id": "3c53b36ff9fef0c7",
         "type": "split",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "splt": "\\n",
@@ -334,14 +321,14 @@
         "y": 2340,
         "wires": [
             [
-                "6ea4045e36bba8af"
+                "f1c010348e00ec1e"
             ]
         ]
     },
     {
-        "id": "eff03c684ad60919",
+        "id": "b35001ead33161e5",
         "type": "delay",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "pauseType": "rate",
@@ -360,14 +347,14 @@
         "y": 2500,
         "wires": [
             [
-                "0f35b6fda90245d5"
+                "d880e13d798cdbf2"
             ]
         ]
     },
     {
-        "id": "b31a2ceca60e6ae4",
+        "id": "46e4434fabb404b0",
         "type": "inject",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "props": [
@@ -390,14 +377,14 @@
         "y": 2340,
         "wires": [
             [
-                "0bbd138f425166cd"
+                "c1f6fc02fd9edba4"
             ]
         ]
     },
     {
-        "id": "b68297d9961f367b",
+        "id": "ce9067192f751d6c",
         "type": "http in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "http url",
         "url": "/orders",
@@ -409,14 +396,14 @@
         "y": 2840,
         "wires": [
             [
-                "ecdd85a6f56c6f28"
+                "014e9d9b9cf24a8b"
             ]
         ]
     },
     {
-        "id": "ecdd85a6f56c6f28",
+        "id": "014e9d9b9cf24a8b",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "function 2",
         "func": "const city = (msg.req.query.city || \"BENGALURU\").toUpperCase();\nconst name = (msg.req.query.name || \"\").toUpperCase();\nconst limit = parseInt(msg.req.query.limit || \"10\", 10);\n\nlet query = `\nSELECT\n   order_id,\n   order_date,\n   buyer_name,\n   city,\n   state,\n   sku,\n   description,\n   quantity,\n   amount,\n   event_time\nFROM ORDERS_BY_CITY_NAME\nWHERE city='${city}'\n`;\n\nif (name) {\n    query += ` AND buyer_name='${name}'`;\n}\n\nquery += ` LIMIT ${limit};`;\n\nmsg.payload = { ksql: query };\n\nreturn msg;",
@@ -430,15 +417,15 @@
         "y": 2840,
         "wires": [
             [
-                "2dd3257ef68d04f7",
-                "bfbc76548245b71c"
+                "667fb36242c703cc",
+                "321716f586cf2681"
             ]
         ]
     },
     {
-        "id": "2dd3257ef68d04f7",
+        "id": "667fb36242c703cc",
         "type": "http request",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "method": "POST",
@@ -463,15 +450,15 @@
         "y": 2840,
         "wires": [
             [
-                "f0a8cfb4430d2072",
-                "dbc83e4bcf1feeed"
+                "ab37c67f9cc357a4",
+                "d7c965f1053d8f8e"
             ]
         ]
     },
     {
-        "id": "f0a8cfb4430d2072",
+        "id": "ab37c67f9cc357a4",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "function 3",
         "func": "// ksqlDB response example:\n// [\n//   { header: {...} },\n//   { row: { columns: [...] } },\n//   { row: { columns: [...] } }\n// ]\n\nconst rows = msg.payload || [];\nconst result = [];\n\nfor (const r of rows) {\n\n    // ✅ skip schema/header/invalid messages\n    if (!r || !r.row || !Array.isArray(r.row.columns)) continue;\n\n    const c = r.row.columns;\n\n    // DEBUG (optional - remove later)\n    // node.warn(c);\n\n    /*\n      IMPORTANT:\n      Because you are using MATERIALIZED TABLE,\n      first column = TABLE KEY (city)\n\n      So actual order becomes:\n\n      c[0] = key_city\n      c[1] = order_id\n      c[2] = order_date\n      c[3] = buyer_name\n      c[4] = city\n      c[5] = state\n      c[6] = sku\n      c[7] = description\n      c[8] = quantity\n      c[9] = amount\n      c[10] = event_time\n    */\n\n    result.push({\n    order_id: c[0],\n    buyer_name: c[1],\n    city: c[2],\n    state: c[3],\n    order_date: c[4],\n    sku: c[5],\n    description: c[6],\n    quantity: Number(c[7]),\n    amount: Number(c[8]),\n    event_time: c[9] ? Number(c[9]) : null\n});\n}\n\n// send clean array to React\nmsg.payload = result;\n\nreturn msg;",
@@ -485,15 +472,15 @@
         "y": 2840,
         "wires": [
             [
-                "85acf813ec7962ee",
-                "5fafe02f41c8a258"
+                "5f45b9a7910ff212",
+                "39346fbefb536a9c"
             ]
         ]
     },
     {
-        "id": "85acf813ec7962ee",
+        "id": "5f45b9a7910ff212",
         "type": "http response",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "statusCode": "",
@@ -503,9 +490,9 @@
         "wires": []
     },
     {
-        "id": "bfbc76548245b71c",
+        "id": "321716f586cf2681",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "debug 1",
         "active": true,
@@ -520,9 +507,9 @@
         "wires": []
     },
     {
-        "id": "dbc83e4bcf1feeed",
+        "id": "d7c965f1053d8f8e",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "debug 2",
         "active": true,
@@ -537,9 +524,9 @@
         "wires": []
     },
     {
-        "id": "5fafe02f41c8a258",
+        "id": "39346fbefb536a9c",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "debug 3",
         "active": true,
@@ -555,9 +542,9 @@
         "wires": []
     },
     {
-        "id": "6ea4045e36bba8af",
+        "id": "f1c010348e00ec1e",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "function 4",
         "func": "msg.format = \"csv\";   // change to xml / json\nreturn msg;",
@@ -571,14 +558,14 @@
         "y": 2340,
         "wires": [
             [
-                "51d2c0d01d3b4082"
+                "11ce062849e97a8b"
             ]
         ]
     },
     {
-        "id": "ccbc180a9540bc40",
+        "id": "ca3f3cfc4a8b049d",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "debug 6",
         "active": true,
@@ -594,9 +581,9 @@
         "wires": []
     },
     {
-        "id": "05cc01c6a3a6ae47",
+        "id": "ec2cc6b235994333",
         "type": "inject",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Inject CSV",
         "props": [
             {
@@ -618,16 +605,16 @@
         "y": 100,
         "wires": [
             [
-                "3d5f4eb0ddec444f"
+                "8ea82779aafa2f9b"
             ]
         ]
     },
     {
-        "id": "3d5f4eb0ddec444f",
+        "id": "8ea82779aafa2f9b",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Set CSV File",
-        "func": "msg.filename = \"/home/nithin/Downloads/real-time-order-analytics/data/orders_data_4.csv\";\nreturn msg;",
+        "func": "msg.filename = \"/files/orders_data_4.csv\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -638,14 +625,14 @@
         "y": 100,
         "wires": [
             [
-                "92e8990aea03a362"
+                "952977a981a566e4"
             ]
         ]
     },
     {
-        "id": "92e8990aea03a362",
+        "id": "952977a981a566e4",
         "type": "file in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Read File",
         "filename": "filename",
         "filenameType": "msg",
@@ -658,15 +645,15 @@
         "y": 100,
         "wires": [
             [
-                "5b3209ed3d49cc68",
-                "f95ac924f8bfa14b"
+                "4f3747a4b5d03eba",
+                "22fb497f7d9b6968"
             ]
         ]
     },
     {
-        "id": "5b3209ed3d49cc68",
+        "id": "4f3747a4b5d03eba",
         "type": "csv",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "spec": "rfc",
         "sep": ",",
@@ -683,14 +670,14 @@
         "y": 100,
         "wires": [
             [
-                "42dc192a69b5f6ed"
+                "c8c922ca34c6f912"
             ]
         ]
     },
     {
-        "id": "42dc192a69b5f6ed",
+        "id": "c8c922ca34c6f912",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "CSV Formatter",
         "func": "// =========================\n// 🔹 CSV FORMATTER (UPDATED FINAL)\n// =========================\n\n// Validate payload\nif (typeof msg.payload !== \"object\") {\n\n  node.warn(\n    \"Invalid payload: \" +\n    msg.payload\n  );\n\n  return null;\n}\n\nconst row = msg.payload;\n\n// =========================\n// 🔹 CLEAN DATE\n// =========================\n\nconst rawDate = row.timestamp || row.order_date || \"\";\n\nlet parsedDate = new Date(rawDate);\n\nif (isNaN(parsedDate.getTime())) {\n\n  parsedDate = new Date();\n}\n\n// =========================\n// 🔹 CLEAN FIELDS\n// =========================\n\n// ORDER ID\nconst orderId =\n  row.order_id ||\n  row.order_no ||\n  null;\n\n// CUSTOMER\nconst customerName =\n  row.customer_name ||\n  row.buyer ||\n  \"UNKNOWN\";\n\n// PRODUCT\nconst productName =\n  row.product_name ||\n  row.description ||\n  \"UNKNOWN PRODUCT\";\n\n// CATEGORY\nconst category =\n  row.category ||\n  \"GENERAL\";\n\n// PAYMENT METHOD\nlet paymentMethod = \"ONLINE\";\n\nif (row.payment_method) {\n\n  paymentMethod = row.payment_method\n    .toString()\n    .trim()\n    .toUpperCase();\n\n}\nelse if (row.cod) {\n\n  paymentMethod = \"COD\";\n}\n\n// CITY\nconst rawCity =\n  row.city ||\n  row.ship_city;\n\nconst city = rawCity\n  ? rawCity.toString()\n    .replace(/,+$/, '')\n    .trim()\n    .toUpperCase()\n  : null;\n\n// STATE\nconst rawState =\n  row.state ||\n  row.ship_state;\n\nconst state = rawState\n  ? rawState.toString()\n    .replace(/,+$/, '')\n    .trim()\n    .toUpperCase()\n  : \"UNKNOWN\";\n\n// QUANTITY\nconst quantity =\n  row.quantity\n    ? Number(row.quantity)\n    : 1;\n\n// AMOUNT\nconst rawAmount =\n  row.amount ||\n  row.item_total ||\n  0;\n\nconst amount = Number(\n  rawAmount.toString()\n    .replace(/[₹,]/g, '')\n    .trim()\n);\n\n// SHIPPING FEE\nconst rawShipping =\n  row.shipping_fee ||\n  0;\n\nconst shippingFee = Number(\n  rawShipping.toString()\n    .replace(/[₹,]/g, '')\n    .trim()\n);\n\n// ORDER STATUS\nconst orderStatus =\n  row.order_status ||\n  \"PENDING\";\n\n// ORDER SOURCE\nconst orderSource =\n  row.order_source ||\n  \"WEBSITE\";\n\n// =========================\n// 🔹 VALIDATION\n// =========================\n\nif (!orderId || !city) {\n\n  node.warn(\n    \"Skipping invalid row: \" +\n    JSON.stringify(row)\n  );\n\n  return null;\n}\n\n// =========================\n// 🔹 FINAL NORMALIZED EVENT\n// =========================\n\nmsg.payload = {\n\n  order_id: orderId\n    .toString()\n    .trim(),\n\n  customer_name: customerName\n    .toString()\n    .trim(),\n\n  product_name: productName\n    .toString()\n    .trim(),\n\n  category: category\n    .toString()\n    .trim(),\n\n  payment_method: paymentMethod,\n\n  city: city,\n\n  state: state,\n\n  quantity: quantity,\n\n  amount: amount,\n\n  shipping_fee: shippingFee,\n\n  order_status: orderStatus,\n\n  order_source: orderSource,\n\n  order_date: parsedDate.toISOString(),\n\n  timestamp: new Date().toISOString()\n\n};\n\n// =========================\n// 🔹 DEBUG\n// =========================\n\nnode.warn(\n  \"FINAL CSV JSON → \" +\n  JSON.stringify(msg.payload)\n);\n\nreturn msg;",
         "outputs": 1,
@@ -703,15 +690,15 @@
         "y": 100,
         "wires": [
             [
-                "91cc297cc4ecf301",
-                "ab8ce08a6c71fcb1"
+                "8c3334555779de6d",
+                "3a10713b6967ab7c"
             ]
         ]
     },
     {
-        "id": "ceed6bea5a426bae",
+        "id": "82f1e634803dba9a",
         "type": "kafkajs-producer",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Order Kafka Producer",
         "client": "9391ef88b1f4d066",
         "topic": "orders_events_v2",
@@ -729,9 +716,9 @@
         "wires": []
     },
     {
-        "id": "ace8eb01a819cc9d",
+        "id": "64a2a8ec9e0fbe94",
         "type": "inject",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Inject JSON",
         "props": [
             {
@@ -753,16 +740,16 @@
         "y": 300,
         "wires": [
             [
-                "82d01aba53e81459"
+                "d315c37f8ba5f4cf"
             ]
         ]
     },
     {
-        "id": "82d01aba53e81459",
+        "id": "d315c37f8ba5f4cf",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Set JSON File",
-        "func": "msg.filename = \"/home/nithin/Downloads/real-time-order-analytics/data/orders_data.json\";\nreturn msg;",
+        "func": "msg.filename = \"/files/orders_data.json\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -773,15 +760,15 @@
         "y": 300,
         "wires": [
             [
-                "161e8d31ac655fb1",
-                "0325c84a753fb169"
+                "7a5c456040b7388a",
+                "0f8f4f26f8fe299b"
             ]
         ]
     },
     {
-        "id": "58269572cc1fa163",
+        "id": "1cc38dac40e9d93c",
         "type": "kafkajs-producer",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Order Kafka Producer",
         "client": "9391ef88b1f4d066",
         "topic": "orders_events_v2",
@@ -799,9 +786,9 @@
         "wires": []
     },
     {
-        "id": "161e8d31ac655fb1",
+        "id": "7a5c456040b7388a",
         "type": "file in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Read File",
         "filename": "filename",
         "filenameType": "msg",
@@ -814,14 +801,14 @@
         "y": 300,
         "wires": [
             [
-                "3fd60aa7e457f60c"
+                "72f24e2817911308"
             ]
         ]
     },
     {
-        "id": "f95ac924f8bfa14b",
+        "id": "22fb497f7d9b6968",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 7",
         "active": true,
         "tosidebar": true,
@@ -835,9 +822,9 @@
         "wires": []
     },
     {
-        "id": "0325c84a753fb169",
+        "id": "0f8f4f26f8fe299b",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 8",
         "active": true,
         "tosidebar": true,
@@ -851,9 +838,9 @@
         "wires": []
     },
     {
-        "id": "3fd60aa7e457f60c",
+        "id": "72f24e2817911308",
         "type": "json",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "property": "payload",
         "action": "",
@@ -862,14 +849,14 @@
         "y": 340,
         "wires": [
             [
-                "8428fe75c4aa45d0"
+                "d3d0b697f5be364a"
             ]
         ]
     },
     {
-        "id": "de33e8dae38a2bc6",
+        "id": "549b993ff57d0c89",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "JSON Formatter",
         "func": "// =========================\n// 🔹 JSON FORMATTER (FINAL)\n// Supports OLD + NEW JSON SCHEMA\n// =========================\n\n// Validate payload\nif (typeof msg.payload !== \"object\") {\n\n    node.warn(\"Invalid payload: \" + msg.payload);\n\n    return null;\n}\n\nconst row = msg.payload;\n\n// =========================\n// 🔹 CLEAN + NORMALIZE FIELDS\n// =========================\n\n// ORDER ID\nconst orderId = row.order_id || row.order_no;\n\n// CUSTOMER NAME\nconst customerName = row.customer_name || row.buyer || \"UNKNOWN\";\n\n// PRODUCT NAME\nconst productName =\n    row.product_name ||\n    row.description ||\n    \"UNKNOWN PRODUCT\";\n\n// PAYMENT METHOD\nlet paymentMethod = \"ONLINE\";\n\nif (row.payment_method) {\n\n    paymentMethod = row.payment_method\n        .toString()\n        .trim()\n        .toUpperCase();\n\n}\nelse if (row.cod) {\n\n    paymentMethod = \"COD\";\n}\n\n// CITY\nconst rawCity = row.city || row.ship_city;\n\nconst city = rawCity\n    ? rawCity.toString()\n        .replace(/,+$/, '')\n        .trim()\n        .toUpperCase()\n    : null;\n\n// STATE\nconst state = (\n    row.state ||\n    row.ship_state ||\n    \"UNKNOWN\"\n)\n    .toString()\n    .trim()\n    .toUpperCase();\n\n// QUANTITY\nconst quantity = row.quantity\n    ? Number(row.quantity)\n    : 1;\n\n// AMOUNT\nconst rawAmount =\n    row.amount ||\n    row.item_total ||\n    0;\n\nconst amount = Number(\n    rawAmount\n        .toString()\n        .replace(/[₹,]/g, '')\n        .trim()\n);\n\n// SHIPPING FEE\nconst rawShipping =\n    row.shipping_fee ||\n    0;\n\nconst shippingFee = Number(\n    rawShipping\n        .toString()\n        .replace(/[₹,]/g, '')\n        .trim()\n);\n\n// ORDER STATUS\nconst orderStatus =\n    row.order_status ||\n    \"PENDING\";\n\n// ORDER DATE\nconst orderDate =\n    row.order_date ||\n    new Date().toISOString();\n\n// =========================\n// 🔹 VALIDATION\n// =========================\n\nif (!orderId || !city) {\n\n    node.warn(\n        \"Skipping invalid row: \" +\n        JSON.stringify(row)\n    );\n\n    return null;\n}\n\n// =========================\n// 🔹 FINAL CLEAN EVENT\n// =========================\n\nmsg.payload = {\n\n    order_id: orderId\n        .toString()\n        .trim(),\n\n    customer_name: customerName\n        .toString()\n        .trim(),\n\n    product_name: productName\n        .toString()\n        .trim(),\n\n    payment_method: paymentMethod,\n\n    city: city,\n\n    state: state,\n\n    quantity: quantity,\n\n    amount: amount,\n\n    shipping_fee: shippingFee,\n\n    order_status: orderStatus,\n\n    order_date: orderDate,\n\n    timestamp: new Date().toISOString()\n\n};\n\n// =========================\n// 🔹 DEBUG\n// =========================\n\nnode.warn(\n    \"FINAL JSON → \" +\n    JSON.stringify(msg.payload)\n);\n\nreturn msg;",
         "outputs": 1,
@@ -882,15 +869,15 @@
         "y": 340,
         "wires": [
             [
-                "0fe8ef2594d7e48c",
-                "74bca7abf2de2ec4"
+                "213c31d522d68f4f",
+                "0c9c1a705b13c838"
             ]
         ]
     },
     {
-        "id": "4d3d01f1d2b0a0a2",
+        "id": "02c310a61d3c756f",
         "type": "kafkajs-producer",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Order Kafka Producer",
         "client": "9391ef88b1f4d066",
         "topic": "orders_events_v2",
@@ -908,9 +895,9 @@
         "wires": []
     },
     {
-        "id": "ca785aa2f3207a8a",
+        "id": "3a318d080cbd68f5",
         "type": "inject",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Inject XML",
         "props": [
             {
@@ -929,19 +916,19 @@
         "payload": "",
         "payloadType": "date",
         "x": 120,
-        "y": 600,
+        "y": 580,
         "wires": [
             [
-                "223dbdda1cefc704"
+                "212de46dce66119b"
             ]
         ]
     },
     {
-        "id": "223dbdda1cefc704",
+        "id": "212de46dce66119b",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Set XML File",
-        "func": "msg.filename = \"/home/nithin/Downloads/real-time-order-analytics/data/orders_data.xml\";\nreturn msg;",
+        "func": "msg.filename = \"/files/orders_data.xml\";\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -952,15 +939,15 @@
         "y": 600,
         "wires": [
             [
-                "b22c18efce52351c",
-                "08eef7973add72f6"
+                "e97dc24725bf5302",
+                "4bc414aac09518d9"
             ]
         ]
     },
     {
-        "id": "b22c18efce52351c",
+        "id": "e97dc24725bf5302",
         "type": "file in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Read File",
         "filename": "filename",
         "filenameType": "msg",
@@ -973,14 +960,14 @@
         "y": 600,
         "wires": [
             [
-                "06f059a021dd9748"
+                "fe4331be59fa2063"
             ]
         ]
     },
     {
-        "id": "08eef7973add72f6",
+        "id": "4bc414aac09518d9",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 9",
         "active": true,
         "tosidebar": true,
@@ -994,9 +981,9 @@
         "wires": []
     },
     {
-        "id": "74bca7abf2de2ec4",
+        "id": "0c9c1a705b13c838",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 10",
         "active": true,
         "tosidebar": true,
@@ -1010,9 +997,9 @@
         "wires": []
     },
     {
-        "id": "91cc297cc4ecf301",
+        "id": "8c3334555779de6d",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 11",
         "active": true,
         "tosidebar": true,
@@ -1026,9 +1013,9 @@
         "wires": []
     },
     {
-        "id": "27c7e7b5563865da",
+        "id": "f26971a94de2dd55",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "XML Formatter",
         "func": "// =========================\n// 🔹 XML FORMATTER (UPDATED FINAL)\n// =========================\n\nif (!msg.payload) {\n\n    node.warn(\"Empty XML payload\");\n    return null;\n\n}\n\nlet data = msg.payload;\n\n// =========================\n// 🔹 NORMALIZE XML STRUCTURE\n// =========================\n\nlet orders = [];\n\nif (data.orders && data.orders.order) {\n\n    orders = Array.isArray(data.orders.order)\n        ? data.orders.order\n        : [data.orders.order];\n\n} else {\n\n    orders = [data];\n\n}\n\n// =========================\n// 🔹 CLEAN + FORMAT DATA\n// =========================\n\nlet result = [];\n\norders.forEach(row => {\n\n    // ORDER ID\n    const orderId = row.order_id\n        ? row.order_id.toString().trim()\n        : null;\n\n    // CUSTOMER\n    const customerName = row.customer_name\n        ? row.customer_name.toString().trim()\n        : \"UNKNOWN\";\n\n    // PRODUCT\n    const productName = row.product_name\n        ? row.product_name.toString().trim()\n        : \"UNKNOWN\";\n\n    // PAYMENT\n    const paymentMethod = row.payment_method\n        ? row.payment_method.toString().trim().toUpperCase()\n        : \"UNKNOWN\";\n\n    // CITY\n    const city = row.city\n        ? row.city.toString().trim().toUpperCase()\n        : null;\n\n    // STATE\n    const state = row.state\n        ? row.state.toString().trim().toUpperCase()\n        : \"UNKNOWN\";\n\n    // QUANTITY\n    const quantity = row.quantity\n        ? Number(row.quantity)\n        : 1;\n\n    // AMOUNT\n    let amount = 0;\n\n    if (row.amount) {\n\n        amount = Number(\n            row.amount.toString()\n                .replace(/[₹,]/g, \"\")\n                .trim()\n        );\n\n    }\n\n    // SHIPPING FEE\n    let shippingFee = 0;\n\n    if (row.shipping_fee) {\n\n        shippingFee = Number(\n            row.shipping_fee.toString()\n                .replace(/[₹,]/g, \"\")\n                .trim()\n        );\n\n    }\n\n    // ORDER STATUS\n    const orderStatus = row.order_status\n        ? row.order_status.toString().trim()\n        : \"PENDING\";\n\n    // =========================\n    // 🔹 SKIP INVALID DATA\n    // =========================\n\n    if (!orderId || !city) {\n\n        node.warn(\n            \"Skipping invalid XML row: \" +\n            JSON.stringify(row)\n        );\n\n        return;\n\n    }\n\n    // =========================\n    // 🔹 FINAL CLEAN OBJECT\n    // =========================\n\n    result.push({\n\n        order_id: orderId,\n\n        customer_name: customerName,\n\n        product_name: productName,\n\n        payment_method: paymentMethod,\n\n        city: city,\n\n        state: state,\n\n        quantity: quantity,\n\n        amount: amount,\n\n        shipping_fee: shippingFee,\n\n        order_status: orderStatus\n\n    });\n\n});\n\n// =========================\n// 🔹 NO VALID DATA\n// =========================\n\nif (result.length === 0) {\n\n    node.warn(\"No valid XML orders found\");\n    return null;\n\n}\n\n// =========================\n// 🔹 FINAL PAYLOAD\n// =========================\n\nmsg.payload = {\n\n    orders: result\n\n};\n\nreturn msg;",
         "outputs": 1,
@@ -1041,15 +1028,15 @@
         "y": 620,
         "wires": [
             [
-                "c3169a25326b6401",
-                "fbc65add937949b2"
+                "9bc4732373fd6ec3",
+                "aba2b0022abad753"
             ]
         ]
     },
     {
-        "id": "c3169a25326b6401",
+        "id": "9bc4732373fd6ec3",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 12",
         "active": true,
         "tosidebar": true,
@@ -1063,9 +1050,9 @@
         "wires": []
     },
     {
-        "id": "8428fe75c4aa45d0",
+        "id": "d3d0b697f5be364a",
         "type": "split",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "splt": "",
         "spltType": "str",
@@ -1078,14 +1065,14 @@
         "y": 280,
         "wires": [
             [
-                "de33e8dae38a2bc6"
+                "549b993ff57d0c89"
             ]
         ]
     },
     {
-        "id": "3554c288d3650938",
+        "id": "713644fb083a76cf",
         "type": "split",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "splt": "\\n",
         "spltType": "str",
@@ -1098,14 +1085,14 @@
         "y": 600,
         "wires": [
             [
-                "27c7e7b5563865da"
+                "f26971a94de2dd55"
             ]
         ]
     },
     {
-        "id": "c05d05210d24cb05",
+        "id": "d134bfe44123c930",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "function 5",
         "func": "// Flexible XML extractor\n\nlet data = msg.payload;\n\n// Case 1: orders.order\nif (data.orders && data.orders.order) {\n    msg.payload = data.orders.order;\n    return msg;\n}\n\n\n\nnode.warn(\"Invalid XML structure: \" + JSON.stringify(msg.payload));\nreturn null;",
         "outputs": 1,
@@ -1118,14 +1105,14 @@
         "y": 560,
         "wires": [
             [
-                "3554c288d3650938"
+                "713644fb083a76cf"
             ]
         ]
     },
     {
-        "id": "0fe8ef2594d7e48c",
+        "id": "213c31d522d68f4f",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "function 6",
         "func": "msg.payload = JSON.stringify(msg.payload);\nreturn msg;",
         "outputs": 1,
@@ -1138,14 +1125,14 @@
         "y": 420,
         "wires": [
             [
-                "58269572cc1fa163"
+                "1cc38dac40e9d93c"
             ]
         ]
     },
     {
-        "id": "fbc65add937949b2",
+        "id": "aba2b0022abad753",
         "type": "xml",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "property": "payload",
         "attr": "",
@@ -1154,14 +1141,14 @@
         "y": 680,
         "wires": [
             [
-                "4d3d01f1d2b0a0a2"
+                "02c310a61d3c756f"
             ]
         ]
     },
     {
-        "id": "06f059a021dd9748",
+        "id": "fe4331be59fa2063",
         "type": "xml",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "property": "payload",
         "attr": "",
@@ -1170,243 +1157,14 @@
         "y": 620,
         "wires": [
             [
-                "c05d05210d24cb05"
+                "d134bfe44123c930"
             ]
         ]
     },
     {
-        "id": "6f8d4d3afa655410",
-        "type": "Kafka Consumer",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "Order Kafka Consumer",
-        "broker": "1e3981c8552e0d34",
-        "regex": false,
-        "topics": [
-            {
-                "topic": "orders0_avg",
-                "offset": 0,
-                "partition": 0
-            }
-        ],
-        "groupId": "kafka-node-group",
-        "autoCommit": "true",
-        "autoCommitIntervalMs": 5000,
-        "fetchMaxWaitMs": 100,
-        "fetchMinBytes": 1,
-        "fetchMaxBytes": 1048576,
-        "fromOffset": 0,
-        "encoding": "utf8",
-        "keyEncoding": "utf8",
-        "connectionType": "Consumer",
-        "convertToJson": false,
-        "x": 95,
-        "y": 1560,
-        "wires": [
-            [
-                "1b53916f08c8d292",
-                "8c941676ccb64104"
-            ]
-        ],
-        "l": false
-    },
-    {
-        "id": "8c941676ccb64104",
-        "type": "function",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "function websocket format",
-        "func": "// 1. Ensure payload exists\nif (!msg.payload) {\n    return null;\n}\n\nlet data;\n\n// 2. Safely parse JSON\ntry {\n    data = (typeof msg.payload === \"string\")\n        ? JSON.parse(msg.payload)\n        : msg.payload;\n} catch (err) {\n    node.warn(\"❌ Invalid JSON received from Kafka\");\n    return null;\n}\n\n// 3. Validate required fields\nif (\n    !data.city ||\n    typeof data.total_amount !== \"number\" ||\n    typeof data.count !== \"number\" ||\n    typeof data.avg !== \"number\"\n) {\n    node.warn(\"⚠️ Invalid data format received\");\n    return null;\n}\n\n// 4. Normalize\ndata.city = String(data.city).toUpperCase();\n\nconst cleanData = {\n    city: data.city,\n    total_amount: data.total_amount,\n    count: data.count,\n    avg: data.avg\n};\n\n\n// 🔥 5. STORE DATA (THIS IS THE IMPORTANT PART)\nlet current = global.get(\"orders\") || [];\n\n// remove old entry for same city\ncurrent = current.filter(o => o.city !== cleanData.city);\n\n// add updated one\ncurrent.push(cleanData);\n\n// save back\nglobal.set(\"orders\", current);\n\n\n// 🔥 6. Send to WebSocket\nmsg.payload = cleanData;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 335,
-        "y": 1600,
-        "wires": [
-            [
-                "694d3d8511b8d148",
-                "e54be09090430ce6"
-            ]
-        ],
-        "l": false
-    },
-    {
-        "id": "694d3d8511b8d148",
-        "type": "websocket out",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "Orders Live WebSocket",
-        "server": "35de16ef9ee1aa1b",
-        "client": "",
-        "x": 615,
-        "y": 1680,
-        "wires": [],
-        "l": false
-    },
-    {
-        "id": "1b53916f08c8d292",
-        "type": "debug",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "debug 13",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 395,
-        "y": 1520,
-        "wires": [],
-        "l": false
-    },
-    {
-        "id": "e54be09090430ce6",
-        "type": "debug",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "debug 14",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 625,
-        "y": 1540,
-        "wires": [],
-        "l": false
-    },
-    {
-        "id": "93b496b269ac7690",
-        "type": "json",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "",
-        "property": "payload",
-        "action": "",
-        "pretty": false,
-        "x": 855,
-        "y": 1580,
-        "wires": [
-            [
-                "104b2a684f0d6adf"
-            ]
-        ],
-        "l": false
-    },
-    {
-        "id": "b62049052cac47b7",
-        "type": "Kafka Consumer",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "",
-        "broker": "1e3981c8552e0d34",
-        "regex": false,
-        "topics": [
-            {
-                "topic": "orders0_avg",
-                "offset": 0,
-                "partition": 0
-            }
-        ],
-        "groupId": "kafka-node-group",
-        "autoCommit": "true",
-        "autoCommitIntervalMs": 5000,
-        "fetchMaxWaitMs": 100,
-        "fetchMinBytes": 1,
-        "fetchMaxBytes": 1048576,
-        "fromOffset": 0,
-        "encoding": "utf8",
-        "keyEncoding": "utf8",
-        "connectionType": "Consumer",
-        "convertToJson": false,
-        "x": 785,
-        "y": 1580,
-        "wires": [
-            [
-                "93b496b269ac7690"
-            ]
-        ],
-        "l": false
-    },
-    {
-        "id": "104b2a684f0d6adf",
-        "type": "function",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "function 7",
-        "func": "let city = msg.payload.city;\nlet avg = Number(msg.payload.avg);\n\n// Required format for chart\nmsg.topic = city;\nmsg.payload = avg;\n\nreturn msg;",
-        "outputs": 1,
-        "timeout": 0,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 915,
-        "y": 1580,
-        "wires": [
-            [
-                "c06aa52b39f839a0"
-            ]
-        ],
-        "l": false
-    },
-    {
-        "id": "c06aa52b39f839a0",
-        "type": "ui_chart",
-        "z": "e3ca88df1a09ceff",
-        "d": true,
-        "name": "",
-        "group": "09fb5ec0571fa0c7",
-        "order": 0,
-        "width": 0,
-        "height": 0,
-        "label": "chart",
-        "chartType": "line",
-        "legend": "false",
-        "xformat": "HH:mm:ss",
-        "interpolate": "linear",
-        "nodata": "",
-        "dot": false,
-        "ymin": "",
-        "ymax": "",
-        "removeOlder": 1,
-        "removeOlderPoints": "",
-        "removeOlderUnit": "3600",
-        "cutout": 0,
-        "useOneColor": false,
-        "useUTC": false,
-        "colors": [
-            "#1f77b4",
-            "#aec7e8",
-            "#ff7f0e",
-            "#2ca02c",
-            "#98df8a",
-            "#d62728",
-            "#ff9896",
-            "#9467bd",
-            "#c5b0d5"
-        ],
-        "outputs": 1,
-        "useDifferentColor": false,
-        "className": "",
-        "x": 995,
-        "y": 1580,
-        "wires": [
-            []
-        ],
-        "l": false
-    },
-    {
-        "id": "4c8997fbc87ceeb4",
+        "id": "e34e0b4dc2a4861f",
         "type": "http in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "url": "/orders",
@@ -1418,15 +1176,15 @@
         "y": 1340,
         "wires": [
             [
-                "ad20cd67884b6ff3"
+                "3bcf70158e7388c1"
             ]
         ],
         "l": false
     },
     {
-        "id": "c85346cdde0cabb1",
+        "id": "a95e6619e0a85f5a",
         "type": "http response",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "statusCode": "",
@@ -1437,9 +1195,9 @@
         "l": false
     },
     {
-        "id": "ad20cd67884b6ff3",
+        "id": "3bcf70158e7388c1",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "function redis",
         "func": "msg.payload = \"city_avg:*\";\nreturn msg;",
@@ -1453,15 +1211,15 @@
         "y": 1380,
         "wires": [
             [
-                "409993fb25c6e0d1"
+                "9c1b1e02487525d8"
             ]
         ],
         "l": false
     },
     {
-        "id": "409993fb25c6e0d1",
+        "id": "9c1b1e02487525d8",
         "type": "redis-command",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "server": "c1eb4eb22f91e01c",
         "command": "KEYS",
@@ -1475,15 +1233,15 @@
         "y": 1420,
         "wires": [
             [
-                "9149069558f45e75"
+                "c699f59705831549"
             ]
         ],
         "l": false
     },
     {
-        "id": "a63b2187b0eebd61",
+        "id": "e33adc154845912b",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "function convert redis",
         "func": "let arr = msg.payload;\n\nlet obj = {};\n\nfor (let i = 0; i < arr.length; i += 2) {\n\n    let key = arr[i];\n    let value = arr[i + 1];\n\n    if (key === \"count\") {\n        value = parseInt(value);\n    }\n\n    if (key === \"total_amount\" || key === \"avg\") {\n        value = parseFloat(value);\n    }\n\n    obj[key] = value;\n}\n\nmsg.payload = obj;\n\nreturn msg;",
@@ -1497,15 +1255,15 @@
         "y": 1460,
         "wires": [
             [
-                "eb469a9dd429bf52"
+                "7096354c8acaf2d6"
             ]
         ],
         "l": false
     },
     {
-        "id": "9149069558f45e75",
+        "id": "c699f59705831549",
         "type": "split",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "splt": "\\n",
@@ -1519,15 +1277,15 @@
         "y": 1420,
         "wires": [
             [
-                "15e04a0a9ab2bb48"
+                "493386068344059f"
             ]
         ],
         "l": false
     },
     {
-        "id": "15e04a0a9ab2bb48",
+        "id": "493386068344059f",
         "type": "redis-command",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "server": "c1eb4eb22f91e01c",
         "command": "HGETALL",
@@ -1541,15 +1299,15 @@
         "y": 1420,
         "wires": [
             [
-                "a63b2187b0eebd61"
+                "e33adc154845912b"
             ]
         ],
         "l": false
     },
     {
-        "id": "eb469a9dd429bf52",
+        "id": "7096354c8acaf2d6",
         "type": "join",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "d": true,
         "name": "",
         "mode": "auto",
@@ -1568,15 +1326,15 @@
         "y": 1480,
         "wires": [
             [
-                "c85346cdde0cabb1"
+                "a95e6619e0a85f5a"
             ]
         ],
         "l": false
     },
     {
-        "id": "b097206ce0f71949",
+        "id": "ca1bc5e38987c154",
         "type": "http in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "url": "/alerts",
         "method": "get",
@@ -1587,14 +1345,14 @@
         "y": 1140,
         "wires": [
             [
-                "6f9ab165d2f8ec26"
+                "266a4369715af00c"
             ]
         ]
     },
     {
-        "id": "123c1239dc269ef9",
+        "id": "9c7f04c90fa695bd",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "function redis alert",
         "func": "msg.headers = {\n    \"Content-Type\": \"application/json\"\n};\n\nmsg.payload = {\n    success: true,\n    data: msg.payload || msg.stdout || \"No Redis data\"\n};\n\nreturn msg;",
         "outputs": 1,
@@ -1607,37 +1365,26 @@
         "y": 1140,
         "wires": [
             [
-                "02136e078988122f",
-                "274c21519f13d234"
+                "e7948a125d4d7fdb",
+                "ca6dd9c2b2f3cc93"
             ]
         ]
     },
     {
-        "id": "887f971cda205de0",
+        "id": "e7948a125d4d7fdb",
         "type": "http response",
-        "z": "e3ca88df1a09ceff",
-        "name": "",
-        "statusCode": "",
-        "headers": {},
-        "x": 1610,
-        "y": 1040,
-        "wires": []
-    },
-    {
-        "id": "02136e078988122f",
-        "type": "http response",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "statusCode": "200",
         "headers": {},
-        "x": 780,
+        "x": 800,
         "y": 1140,
         "wires": []
     },
     {
-        "id": "274c21519f13d234",
+        "id": "ca6dd9c2b2f3cc93",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 5",
         "active": true,
         "tosidebar": true,
@@ -1651,9 +1398,9 @@
         "wires": []
     },
     {
-        "id": "2665f15612b2b7e9",
+        "id": "f7ae2bf5b797b937",
         "type": "debug",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "debug 4",
         "active": true,
         "tosidebar": true,
@@ -1667,9 +1414,9 @@
         "wires": []
     },
     {
-        "id": "6f9ab165d2f8ec26",
+        "id": "266a4369715af00c",
         "type": "exec",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "command": "redis-cli",
         "addpay": "",
         "append": "XREVRANGE orders_stream + - COUNT 5",
@@ -1683,16 +1430,16 @@
         "wires": [
             [],
             [
-                "123c1239dc269ef9",
-                "2665f15612b2b7e9"
+                "9c7f04c90fa695bd",
+                "f7ae2bf5b797b937"
             ],
             []
         ]
     },
     {
-        "id": "1a44804c5b280b17",
+        "id": "265bd6be2b084e1e",
         "type": "http in",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "url": "/test",
         "method": "get",
@@ -1703,14 +1450,14 @@
         "y": 820,
         "wires": [
             [
-                "b1b55c01c7f78f09"
+                "3f617e139736f719"
             ]
         ]
     },
     {
-        "id": "b1b55c01c7f78f09",
+        "id": "3f617e139736f719",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "function 8",
         "func": "msg.payload = {\n    success: true,\n    message: \"Node-RED working\"\n};\n\nreturn msg;",
         "outputs": 1,
@@ -1723,14 +1470,14 @@
         "y": 820,
         "wires": [
             [
-                "b4483fc2a29aa2e0"
+                "f9fdde1fa3c2a745"
             ]
         ]
     },
     {
-        "id": "b4483fc2a29aa2e0",
+        "id": "f9fdde1fa3c2a745",
         "type": "http response",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "",
         "statusCode": "",
         "headers": {},
@@ -1739,9 +1486,9 @@
         "wires": []
     },
     {
-        "id": "bd2dd7bcbfa4424b",
+        "id": "6773a0f066f0cdfe",
         "type": "redis-command",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "server": "6fb83bc17420070b",
         "command": "XREVRANGE",
         "name": "Redis Alert",
@@ -1757,9 +1504,9 @@
         ]
     },
     {
-        "id": "81e500547b9c7f20",
+        "id": "82db792884cadfa4",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "XML Formatter",
         "func": "// =========================\n// 🔹 XML FORMATTER (FINAL)\n// =========================\n\nif (!msg.payload) {\n    node.warn(\"Empty XML payload\");\n    return null;\n}\n\nlet data = msg.payload;\n\n// ✅ Normalize orders (handles all cases)\n\nlet orders = [];\n\n\nif (data.orders && data.orders.order) {\n    orders = Array.isArray(data.orders.order)\n        ? data.orders.order\n        : [data.orders.order];\n\n}  else {\n    orders = [data];\n}\n\n// ✅ Process all orders\nlet result = [];\n\norders.forEach(row => {\n\n    const orderId = row.order_no\n        ? row.order_no.toString().trim()\n        : null;\n\n    const city = row.ship_city\n        ? row.ship_city.toString().replace(/,+$/, '').trim().toUpperCase()\n        : null;\n\n    let amount = null;\n    if (row.item_total) {\n        amount = Number(\n            row.item_total.toString().replace(/[₹,]/g, '')\n        );\n    }\n\n    // Skip invalid rows\n    if (!orderId || !city) {\n        node.warn(\"Skipping invalid XML row: \" + JSON.stringify(row));\n        return;\n    }\n\n    result.push({\n        order_id: orderId,\n        amount: amount !== null ? amount : 0,\n        city: city\n    });\n\n});\n\n// If no valid data\nif (result.length === 0) {\n    return null;\n}\n\n// ✅ Final payload (multiple orders supported)\nmsg.payload = {\n    orders: result\n};\n\nreturn msg;",
         "outputs": 1,
@@ -1775,9 +1522,9 @@
         ]
     },
     {
-        "id": "ab8ce08a6c71fcb1",
+        "id": "3a10713b6967ab7c",
         "type": "function",
-        "z": "e3ca88df1a09ceff",
+        "z": "4ab152296acb7a71",
         "name": "Kafka CSV Stringifier",
         "func": "msg.payload = JSON.stringify(msg.payload);\n\nreturn msg;",
         "outputs": 1,
@@ -1790,7 +1537,7 @@
         "y": 160,
         "wires": [
             [
-                "ceed6bea5a426bae"
+                "82f1e634803dba9a"
             ]
         ]
     }

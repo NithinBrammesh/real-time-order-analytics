@@ -1,0 +1,838 @@
+<script type="text/javascript">
+    "use strict";
+    /*global RED*/
+    RED.nodes.registerType('redis-config', {
+        category: 'config',
+        defaults: {
+            name: {
+                value: "Local",
+                required: true
+            },
+            options: {
+                value: "{}",
+                required: true,
+                validate: RED.validators.typedInput("optionsType"),
+
+            },
+            cluster: {
+                value: false
+            },
+            optionsType: { value: "json" }
+        },
+        label: function () {
+            return this.name || "Redis host";
+        },
+        oneditprepare: function () {
+            $("#node-config-input-options").typedInput({
+                default: 'str',
+                typeField: "#node-config-input-optionsType",
+                types: ['str', 'env', 'json', 'jsonata']
+            });
+
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="redis-config">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-server"></i> Name</label>
+        <input type="text" id="node-config-input-name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-options"><i class="fa fa-random"></i> Options</label>
+        <input type="text" id="node-config-input-options">
+        <input type="hidden" id="node-config-input-optionsType">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-cluster">&nbsp;</label>
+        <input type="checkbox" id="node-config-input-cluster" style="display:inline-block; width:15px; vertical-align:baseline;"> Cluster
+    </div>
+</script>
+
+<script type="text/javascript">
+    /*global RED*/
+    RED.nodes.registerType('redis-in', {
+        category: 'Redis',
+        inputs: 0,
+        outputs: 1,
+        color: "#ffffff",
+        icon: "redis.png",
+        paletteLabel: "redis in",
+        defaults: {
+            server: {
+                value: "",
+                type: "redis-config"
+            },
+            command: {
+                value: "blpop"
+            },
+            name: {
+                value: ""
+            },
+            topic: {
+                value: "",
+                required: true
+            },
+            obj: {
+                value: true
+            },
+            timeout: {
+                value: 0,
+                validate: RED.validators.number()
+            }
+        },
+        label: function () {
+            return this.name || this.topic || "redis in";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="redis-in">
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-globe"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="Server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="icon-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-unlock"></i> Method</label>
+        <select id="node-input-command">
+            <option value="blpop" selected>BLPOP</option>
+            <option value="brpop">BRPOP</option>
+            <option value="subscribe">SUBSCRIBE</option>
+            <option value="psubscribe">PSUBSCRIBE</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-timeout"><i class="fa fa-clock-o"></i> Timeout</label>
+        <input type="text" id="node-input-timeout" placeholder="Timeout">
+    </div>
+    <div class="form-row">
+        <label for="node-input-obj">&nbsp;</label>
+        <input type="checkbox" id="node-input-obj" style="display:inline-block; width:15px; vertical-align:baseline;"> Parse payload from JSON Object
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="redis-in">
+    <p>Redis in</p>
+    <p>Acts as Subscriber, using BLPOP, SUBSCRIBE or PSUBSCRIBE</p>
+    <p>The msg.topic is pattern on all methods, separated by spaces.</p>
+    <p>Note: Only PSUBSCRIBE supports patterns with wildcards.</p>
+</script>
+
+
+<script type="text/javascript">
+    /*global RED*/
+    RED.nodes.registerType('redis-out', {
+        category: 'Redis',
+        inputs: 1,
+        outputs: 0,
+        color: "#ffffff",
+        icon: "redis.png",
+        align: "right",
+        paletteLabel: "redis out",
+        defaults: {
+            server: {
+                value: "",
+                type: "redis-config"
+            },
+            command: {
+                value: "rpush"
+            },
+            name: {
+                value: ""
+            },
+            topic: {
+                value: ""
+            },
+            obj: {
+                value: true
+            }
+        },
+        label: function () {
+            return this.name || this.topic || "redis out";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="redis-out">
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-globe"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="Server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="icon-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-unlock"></i> Method</label>
+        <select id="node-input-command">
+            <option value="rpush" selected>RPUSH</option>
+            <option value="lpush">LPUSH</option>
+            <option value="rpushx">RPUSHX</option>
+            <option value="lpushx">LPUSHX</option>
+            <option value="publish">PUBLISH</option>
+        </select>
+    </div>
+    <div class="form-row">
+        <label for="node-input-obj">&nbsp;</label>
+        <input type="checkbox" id="node-input-obj" style="display:inline-block; width:15px; vertical-align:baseline;"> Serialize payload to JSON Object
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="redis-out">
+    <p>Redis out</p>
+    <p>Acts as Publisher, using RPUSH, LPUSH or PUBLISH</p>
+    <p>The msg.topic is key name to publish.</p>
+    <p>Note: Output only works on PUBLISH and return number of subscribers.</p>
+</script>
+
+<script type="text/javascript">
+    /*global RED*/
+    RED.nodes.registerType('redis-command', {
+        category: 'Redis',
+        inputs: 1,
+        outputs: 1,
+        color: "#ffffff",
+        icon: "redis.png",
+        paletteLabel: "redis cmd",
+        defaults: {
+            server: {
+                value: "",
+                type: "redis-config"
+            },
+            command: {
+                value: "set"
+            },
+            name: {
+                value: ""
+            },
+            topic: {
+                value: ""
+            },
+            params: {
+                value: "[]",
+                validate: function (v) { if (!this.required && !v) return true; return RED.validators.typedInput("paramsType")(v); },
+                required: false
+            },
+            paramsType: { value: "json" },
+            payloadType: {
+                value: "json"
+            },
+            block: {
+                value: false
+            }
+        },
+        label: function () {
+            return this.name || "redis " + this.command + " " + (this.topic || "");
+        },
+        oneditprepare: function () {
+            $("#node-input-params").typedInput({
+                default: 'json',
+                typeField: "#node-input-paramsType",
+                types: ['json']
+            });
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="redis-command">
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-globe"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="Server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="icon-tasks"></i> Topic/Key</label>
+        <input type="text" id="node-input-topic" placeholder="Topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-command"><i class="fa fa-unlock"></i> Command</label>
+
+        <select id="node-input-command">
+            <optgroup label="Core">
+                <option value="ACL">ACL</option>
+                <option value="APPEND">APPEND</option>
+                <option value="ASKING">ASKING</option>
+                <option value="AUTH">AUTH</option>
+                <option value="BGREWRITEAOF">BGREWRITEAOF</option>
+                <option value="BGSAVE">BGSAVE</option>
+                <option value="BITCOUNT">BITCOUNT</option>
+                <option value="BITFIELD">BITFIELD</option>
+                <option value="BITFIELD_RO">BITFIELD_RO</option>
+                <option value="BITOP">BITOP</option>
+                <option value="BITPOS">BITPOS</option>
+                <option value="BLPOP">BLPOP</option>
+                <option value="BRPOP">BRPOP</option>
+                <option value="BRPOPLPUSH">BRPOPLPUSH</option>
+                <option value="BZPOPMAX">BZPOPMAX</option>
+                <option value="BZPOPMIN">BZPOPMIN</option>
+                <option value="CLIENT">CLIENT</option>
+                <option value="CLUSTER">CLUSTER</option>
+                <option value="COMMAND">COMMAND</option>
+                <option value="CONFIG">CONFIG</option>
+                <option value="DBSIZE">DBSIZE</option>
+                <option value="DEBUG">DEBUG</option>
+                <option value="DECR">DECR</option>
+                <option value="DECRBY">DECRBY</option>
+                <option value="DEL">DEL</option>
+                <option value="DISCARD">DISCARD</option>
+                <option value="DUMP">DUMP</option>
+                <option value="ECHO">ECHO</option>
+                <option value="EVAL">EVAL</option>
+                <option value="EVALSHA">EVALSHA</option>
+                <option value="EXEC">EXEC</option>
+                <option value="EXISTS">EXISTS</option>
+                <option value="EXPIRE">EXPIRE</option>
+                <option value="EXPIREAT">EXPIREAT</option>
+                <option value="FLUSHALL">FLUSHALL</option>
+                <option value="FLUSHDB">FLUSHDB</option>
+                <option value="GEOADD">GEOADD</option>
+                <option value="GEODIST">GEODIST</option>
+                <option value="GEOHASH">GEOHASH</option>
+                <option value="GEOPOS">GEOPOS</option>
+                <option value="GEORADIUS">GEORADIUS</option>
+                <option value="GEORADIUSBYMEMBER">GEORADIUSBYMEMBER</option>
+                <option value="GEORADIUSBYMEMBER_RO">GEORADIUSBYMEMBER_RO</option>
+                <option value="GEORADIUS_RO">GEORADIUS_RO</option>
+                <option value="GET">GET</option>
+                <option value="GETBIT">GETBIT</option>
+                <option value="GETRANGE">GETRANGE</option>
+                <option value="GETSET">GETSET</option>
+                <option value="HDEL">HDEL</option>
+                <option value="HELLO">HELLO</option>
+                <option value="HEXISTS">HEXISTS</option>
+                <option value="HGET">HGET</option>
+                <option value="HGETALL">HGETALL</option>
+                <option value="HINCRBY">HINCRBY</option>
+                <option value="HINCRBYFLOAT">HINCRBYFLOAT</option>
+                <option value="HKEYS">HKEYS</option>
+                <option value="HLEN">HLEN</option>
+                <option value="HMGET">HMGET</option>
+                <option value="HMSET">HMSET</option>
+                <option value="HOST:">HOST:</option>
+                <option value="HSCAN">HSCAN</option>
+                <option value="HSET">HSET</option>
+                <option value="HSETNX">HSETNX</option>
+                <option value="HSTRLEN">HSTRLEN</option>
+                <option value="HVALS">HVALS</option>
+                <option value="INCR">INCR</option>
+                <option value="INCRBY">INCRBY</option>
+                <option value="INCRBYFLOAT">INCRBYFLOAT</option>
+                <option value="INFO">INFO</option>
+                <option value="KEYS">KEYS</option>
+                <option value="LASTSAVE">LASTSAVE</option>
+                <option value="LATENCY">LATENCY</option>
+                <option value="LINDEX">LINDEX</option>
+                <option value="LINSERT">LINSERT</option>
+                <option value="LLEN">LLEN</option>
+                <option value="LOLWUT">LOLWUT</option>
+                <option value="LPOP">LPOP</option>
+                <option value="LPUSH">LPUSH</option>
+                <option value="LPUSHX">LPUSHX</option>
+                <option value="LRANGE">LRANGE</option>
+                <option value="LREM">LREM</option>
+                <option value="LSET">LSET</option>
+                <option value="LTRIM">LTRIM</option>
+                <option value="MEMORY">MEMORY</option>
+                <option value="MGET">MGET</option>
+                <option value="MIGRATE">MIGRATE</option>
+                <option value="MODULE">MODULE</option>
+                <option value="MONITOR">MONITOR</option>
+                <option value="MOVE">MOVE</option>
+                <option value="MSET">MSET</option>
+                <option value="MSETNX">MSETNX</option>
+                <option value="MULTI">MULTI</option>
+                <option value="OBJECT">OBJECT</option>
+                <option value="PERSIST">PERSIST</option>
+                <option value="PEXPIRE">PEXPIRE</option>
+                <option value="PEXPIREAT">PEXPIREAT</option>
+                <option value="PFADD">PFADD</option>
+                <option value="PFCOUNT">PFCOUNT</option>
+                <option value="PFDEBUG">PFDEBUG</option>
+                <option value="PFMERGE">PFMERGE</option>
+                <option value="PFSELFTEST">PFSELFTEST</option>
+                <option value="PING">PING</option>
+                <option value="POST">POST</option>
+                <option value="PSETEX">PSETEX</option>
+                <option value="PSUBSCRIBE">PSUBSCRIBE</option>
+                <option value="PSYNC">PSYNC</option>
+                <option value="PTTL">PTTL</option>
+                <option value="PUBLISH">PUBLISH</option>
+                <option value="PUBSUB">PUBSUB</option>
+                <option value="PUNSUBSCRIBE">PUNSUBSCRIBE</option>
+                <option value="RANDOMKEY">RANDOMKEY</option>
+                <option value="READONLY">READONLY</option>
+                <option value="READWRITE">READWRITE</option>
+                <option value="RENAME">RENAME</option>
+                <option value="RENAMENX">RENAMENX</option>
+                <option value="REPLCONF">REPLCONF</option>
+                <option value="REPLICAOF">REPLICAOF</option>
+                <option value="RESTORE">RESTORE</option>
+                <option value="RESTORE-ASKING">RESTORE-ASKING</option>
+                <option value="ROLE">ROLE</option>
+                <option value="RPOP">RPOP</option>
+                <option value="RPOPLPUSH">RPOPLPUSH</option>
+                <option value="RPUSH">RPUSH</option>
+                <option value="RPUSHX">RPUSHX</option>
+                <option value="SADD">SADD</option>
+                <option value="SAVE">SAVE</option>
+                <option value="SCAN">SCAN</option>
+                <option value="SCARD">SCARD</option>
+                <option value="SCRIPT">SCRIPT</option>
+                <option value="SDIFF">SDIFF</option>
+                <option value="SDIFFSTORE">SDIFFSTORE</option>
+                <option value="SELECT">SELECT</option>
+                <option value="SET">SET</option>
+                <option value="SETBIT">SETBIT</option>
+                <option value="SETEX">SETEX</option>
+                <option value="SETNX">SETNX</option>
+                <option value="SETRANGE">SETRANGE</option>
+                <option value="SHUTDOWN">SHUTDOWN</option>
+                <option value="SINTER">SINTER</option>
+                <option value="SINTERSTORE">SINTERSTORE</option>
+                <option value="SISMEMBER">SISMEMBER</option>
+                <option value="SLAVEOF">SLAVEOF</option>
+                <option value="SLOWLOG">SLOWLOG</option>
+                <option value="SMEMBERS">SMEMBERS</option>
+                <option value="SMOVE">SMOVE</option>
+                <option value="SORT">SORT</option>
+                <option value="SPOP">SPOP</option>
+                <option value="SRANDMEMBER">SRANDMEMBER</option>
+                <option value="SREM">SREM</option>
+                <option value="SSCAN">SSCAN</option>
+                <option value="STRALGO">STRALGO</option>
+                <option value="STRLEN">STRLEN</option>
+                <option value="SUBSCRIBE">SUBSCRIBE</option>
+                <option value="SUBSTR">SUBSTR</option>
+                <option value="SUNION">SUNION</option>
+                <option value="SUNIONSTORE">SUNIONSTORE</option>
+                <option value="SWAPDB">SWAPDB</option>
+                <option value="SYNC">SYNC</option>
+                <option value="TIME">TIME</option>
+                <option value="TOUCH">TOUCH</option>
+                <option value="TTL">TTL</option>
+                <option value="TYPE">TYPE</option>
+                <option value="UNLINK">UNLINK</option>
+                <option value="UNSUBSCRIBE">UNSUBSCRIBE</option>
+                <option value="UNWATCH">UNWATCH</option>
+                <option value="WAIT">WAIT</option>
+                <option value="WATCH">WATCH</option>
+                <option value="XACK">XACK</option>
+                <option value="XADD">XADD</option>
+                <option value="XCLAIM">XCLAIM</option>
+                <option value="XDEL">XDEL</option>
+                <option value="XGROUP">XGROUP</option>
+                <option value="XINFO">XINFO</option>
+                <option value="XLEN">XLEN</option>
+                <option value="XPENDING">XPENDING</option>
+                <option value="XRANGE">XRANGE</option>
+                <option value="XREAD">XREAD</option>
+                <option value="XREADGROUP">XREADGROUP</option>
+                <option value="XREVRANGE">XREVRANGE</option>
+                <option value="XSETID">XSETID</option>
+                <option value="XTRIM">XTRIM</option>
+                <option value="ZADD">ZADD</option>
+                <option value="ZCARD">ZCARD</option>
+                <option value="ZCOUNT">ZCOUNT</option>
+                <option value="ZINCRBY">ZINCRBY</option>
+                <option value="ZINTERSTORE">ZINTERSTORE</option>
+                <option value="ZLEXCOUNT">ZLEXCOUNT</option>
+                <option value="ZPOPMAX">ZPOPMAX</option>
+                <option value="ZPOPMIN">ZPOPMIN</option>
+                <option value="ZRANGE">ZRANGE</option>
+                <option value="ZRANGEBYLEX">ZRANGEBYLEX</option>
+                <option value="ZRANGEBYSCORE">ZRANGEBYSCORE</option>
+                <option value="ZRANK">ZRANK</option>
+                <option value="ZREM">ZREM</option>
+                <option value="ZREMRANGEBYLEX">ZREMRANGEBYLEX</option>
+                <option value="ZREMRANGEBYRANK">ZREMRANGEBYRANK</option>
+                <option value="ZREMRANGEBYSCORE">ZREMRANGEBYSCORE</option>
+                <option value="ZREVRANGE">ZREVRANGE</option>
+                <option value="ZREVRANGEBYLEX">ZREVRANGEBYLEX</option>
+                <option value="ZREVRANGEBYSCORE">ZREVRANGEBYSCORE</option>
+                <option value="ZREVRANK">ZREVRANK</option>
+                <option value="ZSCAN">ZSCAN</option>
+                <option value="ZSCORE">ZSCORE</option>
+                <option value="ZUNIONSTORE">ZUNIONSTORE</option>
+            </optgroup>
+            <optgroup label="Modules">
+                <option value="AI.CONFIG">AI.CONFIG</option>
+                <option value="AI.DAGRUN">AI.DAGRUN</option>
+                <option value="AI.DAGRUN_RO">AI.DAGRUN_RO</option>
+                <option value="AI.INFO">AI.INFO</option>
+                <option value="AI.MODELDEL">AI.MODELDEL</option>
+                <option value="AI.MODELGET">AI.MODELGET</option>
+                <option value="AI.MODELRUN">AI.MODELRUN</option>
+                <option value="AI.MODELSET">AI.MODELSET</option>
+                <option value="AI.SCRIPTDEL">AI.SCRIPTDEL</option>
+                <option value="AI.SCRIPTGET">AI.SCRIPTGET</option>
+                <option value="AI.SCRIPTRUN">AI.SCRIPTRUN</option>
+                <option value="AI.SCRIPTSET">AI.SCRIPTSET</option>
+                <option value="AI.TENSORGET">AI.TENSORGET</option>
+                <option value="AI.TENSORSET">AI.TENSORSET</option>
+                <option value="AI._MODELSCAN">AI._MODELSCAN</option>
+                <option value="AI._SCRIPTSCAN">AI._SCRIPTSCAN</option>
+                <option value="BF.ADD">BF.ADD</option>
+                <option value="BF.DEBUG">BF.DEBUG</option>
+                <option value="BF.EXISTS">BF.EXISTS</option>
+                <option value="BF.INFO">BF.INFO</option>
+                <option value="BF.INSERT">BF.INSERT</option>
+                <option value="BF.LOADCHUNK">BF.LOADCHUNK</option>
+                <option value="BF.MADD">BF.MADD</option>
+                <option value="BF.MEXISTS">BF.MEXISTS</option>
+                <option value="BF.RESERVE">BF.RESERVE</option>
+                <option value="BF.SCANDUMP">BF.SCANDUMP</option>
+                <option value="CF.ADD">CF.ADD</option>
+                <option value="CF.ADDNX">CF.ADDNX</option>
+                <option value="CF.COMPACT">CF.COMPACT</option>
+                <option value="CF.COUNT">CF.COUNT</option>
+                <option value="CF.DEBUG">CF.DEBUG</option>
+                <option value="CF.DEL">CF.DEL</option>
+                <option value="CF.EXISTS">CF.EXISTS</option>
+                <option value="CF.INFO">CF.INFO</option>
+                <option value="CF.INSERT">CF.INSERT</option>
+                <option value="CF.INSERTNX">CF.INSERTNX</option>
+                <option value="CF.LOADCHUNK">CF.LOADCHUNK</option>
+                <option value="CF.MEXISTS">CF.MEXISTS</option>
+                <option value="CF.RESERVE">CF.RESERVE</option>
+                <option value="CF.SCANDUMP">CF.SCANDUMP</option>
+                <option value="CMS.INCRBY">CMS.INCRBY</option>
+                <option value="CMS.INFO">CMS.INFO</option>
+                <option value="CMS.INITBYDIM">CMS.INITBYDIM</option>
+                <option value="CMS.INITBYPROB">CMS.INITBYPROB</option>
+                <option value="CMS.MERGE">CMS.MERGE</option>
+                <option value="CMS.QUERY">CMS.QUERY</option>
+                <option value="FT.ADD">FT.ADD</option>
+                <option value="FT.ADDHASH">FT.ADDHASH</option>
+                <option value="FT.AGGREGATE">FT.AGGREGATE</option>
+                <option value="FT.ALIASADD">FT.ALIASADD</option>
+                <option value="FT.ALIASDEL">FT.ALIASDEL</option>
+                <option value="FT.ALIASUPDATE">FT.ALIASUPDATE</option>
+                <option value="FT.ALTER">FT.ALTER</option>
+                <option value="FT.CONFIG">FT.CONFIG</option>
+                <option value="FT.CREATE">FT.CREATE</option>
+                <option value="FT.CURSOR">FT.CURSOR</option>
+                <option value="FT.DEBUG">FT.DEBUG</option>
+                <option value="FT.DEL">FT.DEL</option>
+                <option value="FT.DICTADD">FT.DICTADD</option>
+                <option value="FT.DICTDEL">FT.DICTDEL</option>
+                <option value="FT.DICTDUMP">FT.DICTDUMP</option>
+                <option value="FT.DROP">FT.DROP</option>
+                <option value="FT.EXPLAIN">FT.EXPLAIN</option>
+                <option value="FT.EXPLAINCLI">FT.EXPLAINCLI</option>
+                <option value="FT.GET">FT.GET</option>
+                <option value="FT.INFO">FT.INFO</option>
+                <option value="FT.MGET">FT.MGET</option>
+                <option value="FT.OPTIMIZE">FT.OPTIMIZE</option>
+                <option value="FT.SAFEADD">FT.SAFEADD</option>
+                <option value="FT.SAFEADDHASH">FT.SAFEADDHASH</option>
+                <option value="FT.SEARCH">FT.SEARCH</option>
+                <option value="FT.SETPAYLOAD">FT.SETPAYLOAD</option>
+                <option value="FT.SPELLCHECK">FT.SPELLCHECK</option>
+                <option value="FT.SUGADD">FT.SUGADD</option>
+                <option value="FT.SUGDEL">FT.SUGDEL</option>
+                <option value="FT.SUGGET">FT.SUGGET</option>
+                <option value="FT.SUGLEN">FT.SUGLEN</option>
+                <option value="FT.SYNADD">FT.SYNADD</option>
+                <option value="FT.SYNDUMP">FT.SYNDUMP</option>
+                <option value="FT.SYNFORCEUPDATE">FT.SYNFORCEUPDATE</option>
+                <option value="FT.SYNUPDATE">FT.SYNUPDATE</option>
+                <option value="FT.TAGVALS">FT.TAGVALS</option>
+                <option value="GRAPH.BULK">GRAPH.BULK</option>
+                <option value="GRAPH.DELETE">GRAPH.DELETE</option>
+                <option value="GRAPH.EXPLAIN">GRAPH.EXPLAIN</option>
+                <option value="GRAPH.PROFILE">GRAPH.PROFILE</option>
+                <option value="GRAPH.QUERY">GRAPH.QUERY</option>
+                <option value="GRAPH.SLOWLOG">GRAPH.SLOWLOG</option>
+                <option value="JSON.ARRAPPEND">JSON.ARRAPPEND</option>
+                <option value="JSON.ARRINDEX">JSON.ARRINDEX</option>
+                <option value="JSON.ARRINSERT">JSON.ARRINSERT</option>
+                <option value="JSON.ARRLEN">JSON.ARRLEN</option>
+                <option value="JSON.ARRPOP">JSON.ARRPOP</option>
+                <option value="JSON.ARRTRIM">JSON.ARRTRIM</option>
+                <option value="JSON.DEBUG">JSON.DEBUG</option>
+                <option value="JSON.DEL">JSON.DEL</option>
+                <option value="JSON.FORGET">JSON.FORGET</option>
+                <option value="JSON.GET">JSON.GET</option>
+                <option value="JSON.MGET">JSON.MGET</option>
+                <option value="JSON.NUMINCRBY">JSON.NUMINCRBY</option>
+                <option value="JSON.NUMMULTBY">JSON.NUMMULTBY</option>
+                <option value="JSON.OBJKEYS">JSON.OBJKEYS</option>
+                <option value="JSON.OBJLEN">JSON.OBJLEN</option>
+                <option value="JSON.RESP">JSON.RESP</option>
+                <option value="JSON.SET">JSON.SET</option>
+                <option value="JSON.STRAPPEND">JSON.STRAPPEND</option>
+                <option value="JSON.STRLEN">JSON.STRLEN</option>
+                <option value="JSON.TYPE">JSON.TYPE</option>
+                <option value="JSON._CACHEINFO">JSON._CACHEINFO</option>
+                <option value="JSON._CACHEINIT">JSON._CACHEINIT</option>
+                <option value="RG.ABORTEXECUTION">RG.ABORTEXECUTION</option>
+                <option value="RG.CLUSTERSET">RG.CLUSTERSET</option>
+                <option value="RG.CONFIGGET">RG.CONFIGGET</option>
+                <option value="RG.CONFIGSET">RG.CONFIGSET</option>
+                <option value="RG.DROPEXECUTION">RG.DROPEXECUTION</option>
+                <option value="RG.DUMPEXECUTIONS">RG.DUMPEXECUTIONS</option>
+                <option value="RG.DUMPREGISTRATIONS">RG.DUMPREGISTRATIONS</option>
+                <option value="RG.EXAMPLE">RG.EXAMPLE</option>
+                <option value="RG.GETEXECUTION">RG.GETEXECUTION</option>
+                <option value="RG.GETRESULTS">RG.GETRESULTS</option>
+                <option value="RG.GETRESULTSBLOCKING">RG.GETRESULTSBLOCKING</option>
+                <option value="RG.HELLO">RG.HELLO</option>
+                <option value="RG.INFOCLUSTER">RG.INFOCLUSTER</option>
+                <option value="RG.INNERMSGCOMMAND">RG.INNERMSGCOMMAND</option>
+                <option value="RG.INNERREGISTER">RG.INNERREGISTER</option>
+                <option value="RG.INNERUNREGISTER">RG.INNERUNREGISTER</option>
+                <option value="RG.NETWORKTEST">RG.NETWORKTEST</option>
+                <option value="RG.PYDUMPREQS">RG.PYDUMPREQS</option>
+                <option value="RG.PYEXECUTE">RG.PYEXECUTE</option>
+                <option value="RG.PYEXECUTEREMOTE">RG.PYEXECUTEREMOTE</option>
+                <option value="RG.PYEXPORTREQ">RG.PYEXPORTREQ</option>
+                <option value="RG.PYFREEINTERPRETER">RG.PYFREEINTERPRETER</option>
+                <option value="RG.PYIMPORTREQ">RG.PYIMPORTREQ</option>
+                <option value="RG.PYIMPORTRETINTERNAL">RG.PYIMPORTRETINTERNAL</option>
+                <option value="RG.PYSTATS">RG.PYSTATS</option>
+                <option value="RG.REFRESHCLUSTER">RG.REFRESHCLUSTER</option>
+                <option value="RG.TRIGGER">RG.TRIGGER</option>
+                <option value="RG.UNREGISTER">RG.UNREGISTER</option>
+                <option value="TOPK.ADD">TOPK.ADD</option>
+                <option value="TOPK.COUNT">TOPK.COUNT</option>
+                <option value="TOPK.INCRBY">TOPK.INCRBY</option>
+                <option value="TOPK.INFO">TOPK.INFO</option>
+                <option value="TOPK.LIST">TOPK.LIST</option>
+                <option value="TOPK.QUERY">TOPK.QUERY</option>
+                <option value="TOPK.RESERVE">TOPK.RESERVE</option>
+                <option value="TS.ADD">TS.ADD</option>
+                <option value="TS.ALTER">TS.ALTER</option>
+                <option value="TS.CREATE">TS.CREATE</option>
+                <option value="TS.CREATERULE">TS.CREATERULE</option>
+                <option value="TS.DECRBY">TS.DECRBY</option>
+                <option value="TS.DELETERULE">TS.DELETERULE</option>
+                <option value="TS.GET">TS.GET</option>
+                <option value="TS.INCRBY">TS.INCRBY</option>
+                <option value="TS.INFO">TS.INFO</option>
+                <option value="TS.MADD">TS.MADD</option>
+                <option value="TS.MGET">TS.MGET</option>
+                <option value="TS.MRANGE">TS.MRANGE</option>
+                <option value="TS.QUERYINDEX">TS.QUERYINDEX</option>
+                <option value="TS.RANGE">TS.RANGE</option>
+            </optgroup>
+        </select>
+          
+    </div>
+    <div class="form-row">
+        <label for="node-input-params"><i class="fa fa-server"></i> Params</label>
+        <input type="text" id="node-input-params">
+        <input type="hidden" id="node-input-paramsType">
+    </div>
+    <div class="form-row">
+        <label for="node-input-block">&nbsp;</label>
+        <input type="checkbox" id="node-input-block" style="display:inline-block; width:15px; vertical-align:baseline;"> Block Commands(Force use new connection)
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="redis-command">
+    <p>Redis Command</p>
+    <p>Execute command inside Redis sending payload array as parameters and return the result as payload.</p>
+</script>
+
+
+<script type="text/javascript">
+    /*global RED*/
+    RED.nodes.registerType('redis-lua-script', {
+        category: 'Redis',
+        inputs: 1,
+        outputs: 1,
+        color: "#ffffff",
+        icon: "redis.png",
+        paletteLabel: "redis lua",
+        defaults: {
+            server: {
+                value: "",
+                type: "redis-config"
+            },
+            name: {
+                value: ""
+            },
+            keyval: {
+                value: 0,
+                validate: RED.validators.number()
+            },
+            func: {
+                value: "\nreturn nil"
+            },
+            stored: {
+                value: false
+            },
+            block: {
+                value: false
+            }
+        },
+        label: function () {
+            return this.name || "Redis Lua";
+        },
+        oneditprepare: function () {
+            var that = this;
+            $("#node-input-keyval").spinner({
+                min: 0
+            });
+            this.editor = RED.editor.createEditor({
+                id: 'node-input-func-editor',
+                mode: 'ace/mode/lua',
+                value: $("#node-input-func").val()
+            });
+            RED.library.create({
+                url: "functions", // where to get the data from
+                type: "function.lua", // the type of object the library is for
+                editor: this.editor, // the field name the main text body goes to
+                mode: "ace/mode/lua",
+                fields: ['name', 'keyval', 'stored']
+            });
+            this.editor.focus();
+        },
+        oneditsave: function () {
+            var annot = this.editor.getSession().getAnnotations();
+            this.noerr = 0;
+            $("#node-input-noerr").val(0);
+            for (var k = 0; k < annot.length; k++) {
+                //console.log(annot[k].type,":",annot[k].text, "on line", annot[k].row);
+                if (annot[k].type === "error") {
+                    $("#node-input-noerr").val(annot.length);
+                    this.noerr = annot.length;
+                }
+            }
+            $("#node-input-func").val(this.editor.getValue());
+            delete this.editor;
+        },
+        oneditresize: function (size) {
+            var rows = $("#dialog-form>div:not(.node-text-editor-row)");
+            var height = $("#dialog-form").height();
+            for (var i = 0; i < rows.size(); i++) {
+                height -= $(rows[i]).outerHeight(true);
+            }
+            var editorRow = $("#dialog-form>div.node-text-editor-row");
+            height -= (parseInt(editorRow.css("marginTop")) + parseInt(editorRow.css("marginBottom")));
+            $(".node-text-editor").css("height", height + "px");
+            this.editor.resize();
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="redis-lua-script">
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-globe"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="Server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    
+    <div class="form-row">
+        <label>&nbsp;</label>
+        <input type="checkbox" id="node-input-stored" style="display: inline-block; width: auto; vertical-align: top;">
+        <label for="node-input-stored" style="width: 70%;">Stored Script</label>
+    </div>
+    <div class="form-row">
+        <label for="node-input-keyval"><i class="fa fa-random"></i> Keys</label>
+        <input id="node-input-keyval" style="width: 60px; height: 1.7em;" value="0">
+    </div>
+    <div class="form-row" style="margin-bottom: 0px;">
+        <label for="node-input-func"><i class="fa fa-wrench"></i> Lua Script</label>
+        <input type="hidden" id="node-input-func" autofocus="autofocus">
+        <input type="hidden" id="node-input-noerr">
+    </div>
+    <div class="form-row node-text-editor-row">
+        <div style="height: 250px;" class="node-text-editor" id="node-input-func-editor"></div>
+    </div>
+    <div class="form-row">
+        <label for="node-input-block">&nbsp;</label>
+        <input type="checkbox" id="node-input-block" style="display:inline-block; width:15px; vertical-align:baseline;"> Block Commands(Force use new connection)
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="redis-lua-script">
+    <p>Redis Lua</p>
+    <p>Execute lua script inside Redis sending payload array as parameters and return the result as payload.</p>
+    <p>Options</p>
+    <p>Stored: Set if you want use SCRIPT LOAD and EVALSHA to run script</p>
+    <p>Keys: Number of keys that you send to the lua script</p>
+    <p>Script: Lua script</p>
+    <p>Payload: you need send all keys before, after send all values.</p>
+</script>
+
+
+
+<script type="text/javascript">
+    /*global RED*/
+    RED.nodes.registerType('redis-instance', {
+        category: 'Redis',
+        inputs: 0,
+        outputs: 0,
+        color: "#ffffff",
+        icon: "redis.png",
+        paletteLabel: "instance",
+        defaults: {
+            server: {
+                value: "",
+                type: "redis-config"
+            },
+            name: {
+                value: ""
+            },
+            topic: {
+                value: "redis",
+                required: true
+            },
+            location: {
+                value: "flow",
+                required: true
+            }
+        },
+        label: function () {
+            return this.name || this.topic || "instance ["+this.location+"]";
+        }
+    });
+</script>
+
+<script type="text/x-red" data-template-name="redis-instance">
+    <div class="form-row">
+        <label for="node-input-server"><i class="fa fa-globe"></i> Server</label>
+        <input type="text" id="node-input-server" placeholder="Server">
+    </div>
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-topic"><i class="icon-tasks"></i> Topic</label>
+        <input type="text" id="node-input-topic" placeholder="Topic">
+    </div>
+    <div class="form-row">
+        <label for="node-input-location"><i class="fa fa-unlock"></i> Context</label>
+        <select id="node-input-location">
+            <option value="flow" selected>Flow</option>
+            <option value="global">Global</option>
+        </select>
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="redis-instance">
+    <p>Redis Instance</p>
+    <p>Injects a Redis connection on flow or global context.</p> 
+    <p>The Topic is the var name of redis.</p>
+    <p></p>
+</script>

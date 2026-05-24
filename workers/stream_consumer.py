@@ -4,7 +4,7 @@ import redis
 # 🔹 REDIS CONNECTION
 # =========================
 r = redis.Redis(
-    host="localhost",
+    host="redis",
     port=6379,
     decode_responses=True
 )
