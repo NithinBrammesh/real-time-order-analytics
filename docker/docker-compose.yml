@@ -19,6 +19,9 @@ services:
 
     restart: always
 
+    networks:
+      - realtime-network
+
 
 
   kafka:
@@ -53,17 +56,28 @@ services:
 
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
 
+      KAFKA_NUM_PARTITIONS: 1
+
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+
     volumes:
       - kafka-data:/var/lib/kafka/data
 
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"
+        ]
       interval: 30s
       timeout: 20s
       retries: 10
       start_period: 40s
 
     restart: always
+
+    networks:
+      - realtime-network
 
 
 
@@ -79,12 +93,23 @@ services:
       bash -c "
         echo '⏳ Waiting for Kafka...' &&
         sleep 10 &&
-        kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic orders_events_v2 --partitions 1 --replication-factor 1 &&
+        kafka-topics
+        --bootstrap-server kafka:9092
+        --create
+        --if-not-exists
+        --topic orders_events_v2
+        --partitions 1
+        --replication-factor 1 &&
         echo '✅ Topic orders_events_v2 created.' &&
-        kafka-topics --bootstrap-server kafka:9092 --list
+        kafka-topics
+        --bootstrap-server kafka:9092
+        --list
       "
 
     restart: "no"
+
+    networks:
+      - realtime-network
 
 
 
@@ -102,12 +127,16 @@ services:
 
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: flink-jobmanager
+        jobmanager.memory.process.size: 1024m
 
     depends_on:
       kafka-init:
         condition: service_completed_successfully
 
     restart: always
+
+    networks:
+      - realtime-network
 
 
 
@@ -126,8 +155,12 @@ services:
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: flink-jobmanager
         taskmanager.numberOfTaskSlots: 2
+        taskmanager.memory.process.size: 1024m
 
     restart: always
+
+    networks:
+      - realtime-network
 
 
 
@@ -138,6 +171,9 @@ services:
     ports:
       - "6379:6379"
 
+    volumes:
+      - redis-data:/data
+
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -145,6 +181,9 @@ services:
       retries: 5
 
     restart: always
+
+    networks:
+      - realtime-network
 
 
 
@@ -167,7 +206,16 @@ services:
       kafka-init:
         condition: service_completed_successfully
 
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
     restart: always
+
+    networks:
+      - realtime-network
 
 
 
@@ -188,6 +236,9 @@ services:
 
     restart: always
 
+    networks:
+      - realtime-network
+
 
 
   flink-worker:
@@ -206,7 +257,16 @@ services:
 
     restart: on-failure
 
+    networks:
+      - realtime-network
+
 
 
 volumes:
   kafka-data:
+  redis-data:
+
+
+
+networks:
+  realtime-network:

@@ -1,5 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+import eventlet
+eventlet.monkey_patch()
 
 from flask_socketio import SocketIO
 import threading
@@ -13,12 +15,25 @@ from dotenv import load_dotenv
 # =========================
 app = Flask(__name__)
 
+
 socketio = SocketIO(
     app,
-    cors_allowed_origins="*"
+    cors_allowed_origins=[
+        "https://realtime-order-events-frontend.netlify.app"
+    ],
+    async_mode="eventlet"
 )
 
-CORS(app)
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": [
+                "https://realtime-order-events-frontend.netlify.app"
+            ]
+        }
+    }
+)
 
 
 # =========================
@@ -433,6 +448,7 @@ if __name__ == "__main__":
     
     listener_thread = threading.Thread(
     target=redis_listener
+    
     )
 
     listener_thread.daemon = True
@@ -445,5 +461,6 @@ if __name__ == "__main__":
         app,
         host=FLASK_HOST,
         port=int(FLASK_PORT),
-        debug=True
+        debug=False
+        
     )
