@@ -19,16 +19,19 @@ app = Flask(__name__)
 socketio = SocketIO(
     app,
     cors_allowed_origins=[
+        "http://localhost:5173",
         "https://realtime-order-events-frontend.netlify.app"
     ],
     async_mode="eventlet"
 )
+
 
 CORS(
     app,
     resources={
         r"/*": {
             "origins": [
+                "http://localhost:5173",
                 "https://realtime-order-events-frontend.netlify.app"
             ]
         }
